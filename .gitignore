@@ -1,15 +1,23 @@
+# Ignore IDE files
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea/
+
+# Ignore OS-specific files
 .DS_Store
-/build
-/captures
+
+# Ignore Gradle files
+/gradle/
+.gradle/
+/local.properties
+
+# Ignore build artifacts
+/build/
+/app/build/
+app/release/
+/captures/
+*.apk
+*.aab
+
+# Ignore native build artifacts
 .externalNativeBuild
 .cxx
-local.properties
