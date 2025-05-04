@@ -1,19 +1,20 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 
-    id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
+//    id("com.google.dagger.hilt.android")
 }
 
 android {
     namespace = "com.example.tiptracker"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.jerrywang.tiptracker"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 26
+        targetSdk = 35
         versionCode = 12
         versionName = "1.2.1"
 
@@ -70,15 +71,42 @@ android {
 }
 
 dependencies {
+    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.activity.compose)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+
+    // Design System
     implementation(libs.androidx.material3)
+
+    // Android Studio Preview
+    implementation(libs.androidx.ui.tooling.preview)
+    debugImplementation(libs.androidx.ui.tooling)
+
+    // UI Tests
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Integrate with activities
+    implementation(libs.androidx.activity.compose)
+
+    // Integrate with lifecycle dependencies
+    implementation(libs.androidx.lifecycle.viewmodel.compose) // viewModel()
+    implementation(libs.androidx.lifecycle.runtime.ktx) // viewModelScope.launch {}
+    implementation(libs.androidx.lifecycle.runtime.compose) // collectAsStateWithLifecycle()
+
+    // Room database
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
+    // Calendar dialog library
+    // https://github.com/maxkeppeler/sheets-compose-dialogs
+    implementation(libs.core)
+    implementation(libs.calendar)
+
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.gson)
     implementation(libs.androidx.animation)
@@ -88,24 +116,11 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     // Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.android.compiler)
-
-    implementation(libs.core)
-    implementation(libs.calendar)
-
-    debugImplementation(libs.androidx.ui.test.manifest)
-    debugImplementation(libs.androidx.ui.tooling)
+    // implementation(libs.hilt.android)
+    // kapt(libs.hilt.android.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-}
-
-kapt {
-    correctErrorTypes = true
 }
