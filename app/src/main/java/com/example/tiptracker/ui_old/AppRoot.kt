@@ -40,7 +40,7 @@ import com.example.tiptracker.ui_old.addentry.AddEntryFormNavHost
 import com.example.tiptracker.ui_old.logs.DiningLogsNavHost
 import com.example.tiptracker.ui_old.logs.EditLogViewModel
 import com.example.tiptracker.ui_old.addentry.LogViewModel
-import com.example.tiptracker.ui_old.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.TipTrackerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

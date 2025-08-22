@@ -20,17 +20,17 @@ data class BottomBarNavItem(
 val navItemList = listOf(
     BottomBarNavItem(
         label = "Rankings",
-        iconRes = R.drawable.leaderboard,
+        iconRes = R.drawable.ic_leaderboard_outline,
         route = AppScreens.RankingsScreen.name
     ),
     BottomBarNavItem(
         label = "Logs",
-        iconRes = R.drawable.list,
+        iconRes = R.drawable.ic_leaderboard_filled,
         route = AppScreens.LogsScreen.name
     ),
     BottomBarNavItem(
         label = "New",
-        iconRes = R.drawable.add,
+        iconRes = R.drawable.ic_add_outline,
         route = AppScreens.HomeScreen.name
     ),
     BottomBarNavItem(

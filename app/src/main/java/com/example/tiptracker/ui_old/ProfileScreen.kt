@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tiptracker.R
-import com.example.tiptracker.ui_old.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui_old.UserStats.largestPartySizeLogId
 import com.example.tiptracker.ui_old.UserStats.highestSpendLogId
 import com.example.tiptracker.ui_old.UserStats.highestTipPercentLogId

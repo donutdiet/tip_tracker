@@ -1,8 +1,6 @@
 package com.example.tiptracker
 
 import android.app.Application
-import com.example.tiptracker.data.AppContainer
-import com.example.tiptracker.data.AppDataContainer
 
 // For the AndroidManifest.xml android:name I guess...
 class TipTracker : Application() {

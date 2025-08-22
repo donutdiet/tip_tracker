@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.tiptracker.ui_old.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.TipTrackerTheme
 
 @Composable
 fun RankingsScreen(

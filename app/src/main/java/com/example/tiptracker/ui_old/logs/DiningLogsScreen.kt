@@ -49,7 +49,7 @@ import com.example.tiptracker.R
 import com.example.tiptracker.ui_old.DiningLogData
 import com.example.tiptracker.ui_old.UserStats
 import com.example.tiptracker.ui_old.addentry.LogViewModel
-import com.example.tiptracker.ui_old.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.TipTrackerTheme
 import java.text.NumberFormat
 
 private enum class HorizontalDragValue { Settled, StartToEnd, EndToStart }

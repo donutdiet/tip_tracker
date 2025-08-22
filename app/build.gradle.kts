@@ -3,18 +3,19 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
     id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+    id("org.jetbrains.kotlin.plugin.serialization")
 
 //    id("com.google.dagger.hilt.android")
 }
 
 android {
     namespace = "com.example.tiptracker"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jerrywang.tiptracker"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 12
         versionName = "1.2.1"
 
@@ -51,11 +52,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
@@ -104,10 +105,21 @@ dependencies {
     implementation(libs.core)
     implementation(libs.calendar)
 
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
+    // Core runtime for Jetpack Navigation 3 library — provides navigation components and APIs
+    implementation(libs.androidx.navigation3.runtime)
+    // UI components for Navigation 3 — includes NavDisplay etc.
+    implementation(libs.androidx.navigation3.ui)
+    // ViewModel integration with Navigation 3 — provides lifecycle-aware ViewModels scoped to navigation destinations
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+
+    implementation(libs.androidx.adaptive.navigation3)
+
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.gson)
     implementation(libs.androidx.animation)
     implementation(libs.androidx.foundation)
