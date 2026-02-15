@@ -1,4 +1,4 @@
-package com.example.tiptracker.components.navigation
+package com.example.tiptracker.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row

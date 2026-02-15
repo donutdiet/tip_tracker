@@ -1,4 +1,4 @@
-package com.example.tiptracker.components
+package com.example.tiptracker.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.shape.RoundedCornerShape

@@ -44,17 +44,14 @@ fun LogsNavHost(
         backStack = backStack,
         sceneStrategy = listDetailStrategy,
         transitionSpec = {
-            // Global forward animation — slide in from right
             slideInHorizontally(initialOffsetX = { it }) togetherWith
                     slideOutHorizontally(targetOffsetX = { -it })
         },
         popTransitionSpec = {
-            // Global backward animation — slide in from left
             slideInHorizontally(initialOffsetX = { -it }) togetherWith
                     slideOutHorizontally(targetOffsetX = { it })
         },
         predictivePopTransitionSpec = {
-            // Global predictive back gesture animation
             slideInHorizontally(initialOffsetX = { -it }) togetherWith
                     slideOutHorizontally(targetOffsetX = { it })
         },

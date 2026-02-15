@@ -1,4 +1,4 @@
-package com.example.tiptracker.components
+package com.example.tiptracker.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.size

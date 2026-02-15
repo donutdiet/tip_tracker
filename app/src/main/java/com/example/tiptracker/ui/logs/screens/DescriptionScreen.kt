@@ -36,11 +36,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.logs.LogFormState
-import com.example.tiptracker.components.AppButton
-import com.example.tiptracker.components.AppButtonOutlined
-import com.example.tiptracker.components.AppMultiLineTextFieldDone
-import com.example.tiptracker.components.AppTextField
-import com.example.tiptracker.components.MyDatePicker
+import com.example.tiptracker.ui.components.AppButton
+import com.example.tiptracker.ui.components.AppButtonOutlined
+import com.example.tiptracker.ui.components.AppMultiLineTextFieldDone
+import com.example.tiptracker.ui.components.AppTextField
+import com.example.tiptracker.ui.components.MyDatePicker
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui_old.util.formatCurrency
 import com.example.tiptracker.ui_old.util.formatDate

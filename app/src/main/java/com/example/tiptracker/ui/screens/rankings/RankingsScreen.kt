@@ -1,4 +1,4 @@
-package com.example.tiptracker.ui.rankings
+package com.example.tiptracker.ui.screens.rankings
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface

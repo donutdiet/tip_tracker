@@ -1,20 +1,12 @@
 package com.example.tiptracker.ui
 
-import android.util.Log
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -22,16 +14,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.tiptracker.ui.tabs.AppBottomNavigation
 import com.example.tiptracker.ui.logs.LogsNavHost
-import com.example.tiptracker.ui.logs.screens.AddLogNavHost
 import com.example.tiptracker.ui.profile.ProfileScreen
-import com.example.tiptracker.ui.rankings.RankingsScreen
+import com.example.tiptracker.ui.screens.rankings.RankingsScreen
 import com.example.tiptracker.ui.tabs.TabBarItem
 import com.example.tiptracker.ui.tabs.getIndexForTab
 
