@@ -3,17 +3,16 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
 
     id("kotlin-kapt")
-    id("com.google.dagger.hilt.android")
 }
 
 android {
     namespace = "com.example.tiptracker"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jerrywang.tiptracker"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 26
+        targetSdk = 36
         versionCode = 12
         versionName = "1.2.1"
 
@@ -53,8 +52,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        jvmToolchain(8)
     }
     buildFeatures {
         compose = true
@@ -70,40 +69,32 @@ android {
 }
 
 dependencies {
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.activity.compose)
+
+    val composeBom = platform("androidx.compose:compose-bom:2026.01.01")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+
+    // Material Design 3
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
+
+    // Android Studio Preview support
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.gson)
-    implementation(libs.androidx.animation)
-    implementation(libs.androidx.foundation)
-
-    // Preferences DataStore
-    implementation(libs.androidx.datastore.preferences)
-
-    // Hilt
-    implementation(libs.hilt.android)
-    kapt(libs.hilt.android.compiler)
-
-    implementation(libs.core)
-    implementation(libs.calendar)
-
-    debugImplementation(libs.androidx.ui.test.manifest)
     debugImplementation(libs.androidx.ui.tooling)
 
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
+    // UI Tests
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Add window size utils
+    implementation(libs.androidx.adaptive)
+
+    // Integration with activities
+    implementation(libs.androidx.activity.compose)
+    // Integration with ViewModels
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // Integration with LiveData
+    implementation(libs.androidx.runtime.livedata)
+
 }
 
 kapt {
