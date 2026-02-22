@@ -1,9 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.compose.compiler)
-
-    id("kotlin-kapt")
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -18,59 +17,30 @@ android {
         versionName = "1.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
     }
 
     buildTypes {
-        getByName("release") {
-            // Enables code shrinking, obfuscation, and optimization for only
-            // your project's release build type. Make sure to use a build
-            // variant with `isDebuggable=false`.
-            isMinifyEnabled = true
-
-            // Enables resource shrinking, which is performed by the
-            // Android Gradle plugin.
-            isShrinkResources = true
-
+        release {
+            isMinifyEnabled = false
             proguardFiles(
-                // Includes the default ProGuard rules files that are packaged with
-                // the Android Gradle plugin. To learn more, go to the section about
-                // R8 configuration files.
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-
-                // Includes a local, custom Proguard rules file
                 "proguard-rules.pro"
             )
-
-            ndk {
-                debugSymbolLevel = "FULL"
-            }
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlin {
-        jvmToolchain(8)
+        jvmToolchain(11)
     }
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
 }
 
 dependencies {
-
     val composeBom = platform("androidx.compose:compose-bom:2026.01.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -96,8 +66,4 @@ dependencies {
     // Integration with LiveData
     implementation(libs.androidx.runtime.livedata)
 
-}
-
-kapt {
-    correctErrorTypes = true
 }
