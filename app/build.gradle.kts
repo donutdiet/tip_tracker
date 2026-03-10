@@ -52,6 +52,9 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)
 
+    // Navigation 3
+    implementation(libs.androidx.navigation3.runtime)
+
     // UI Tests
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
@@ -65,5 +68,4 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // Integration with LiveData
     implementation(libs.androidx.runtime.livedata)
-
 }
