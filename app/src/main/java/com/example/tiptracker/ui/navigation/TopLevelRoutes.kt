@@ -1,4 +1,4 @@
-package com.example.tiptracker.ui.navigation.routes
+package com.example.tiptracker.ui.navigation
 
 import androidx.navigation3.runtime.NavKey
 import com.example.tiptracker.R

@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -26,20 +27,25 @@ import androidx.navigation3.scene.Scene
 import com.example.tiptracker.ui.navigation.Navigator
 import com.example.tiptracker.ui.navigation.NavigationState
 import com.example.tiptracker.ui.navigation.rememberNavigationState
-import com.example.tiptracker.ui.navigation.routes.TOP_LEVEL_ROUTES
+import com.example.tiptracker.ui.navigation.TOP_LEVEL_ROUTES
 import androidx.navigation3.ui.NavDisplay
-import com.example.tiptracker.ui.navigation.routes.RootKey
-import com.example.tiptracker.ui.navigation.routes.TabKey
+import com.example.tiptracker.data.DatabaseProvider
+import com.example.tiptracker.ui.navigation.RootKey
+import com.example.tiptracker.ui.navigation.TabKey
+import com.example.tiptracker.ui.navigation.rootEntries
 import com.example.tiptracker.ui.navigation.tabEntries
 
 @Composable
 fun RootActivity() {
+    val context = LocalContext.current
+    val db = remember { DatabaseProvider.getDatabase(context) }
+    val logDao = remember { db.logDao() }
+
     val navigationState = rememberNavigationState(
         appRoot = RootKey.Root,
         startRoute = TabKey.Home,
         topLevelRoutes = TOP_LEVEL_ROUTES.keys
     )
-
     val navigator = remember { Navigator(navigationState) }
 
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
@@ -54,6 +60,7 @@ fun RootActivity() {
                 tabEntryProvider = tabEntryProvider
             )
         }
+        rootEntries()
     }
 
     val rootEntries = rememberDecoratedNavEntries(

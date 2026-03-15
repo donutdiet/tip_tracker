@@ -49,7 +49,8 @@ fun rememberNavigationState(
  * State holder for navigation state. This class does not modify its own state. It is designed
  * to be modified using the `Navigator` class.
  *
- * @param startRoute - the start route. The user will exit the app through this route.
+ * @param appRoot - the key for the root route.
+ * @param startTabRoute - the start route. The user will exit the app through this route.
  * @param topLevelRoute - the state object that backs the top level route.
  * @param tabBackStacks - the back stacks for each top level route.
  * @param rootBackStack - the back stack for the root route.
