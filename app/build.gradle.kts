@@ -54,6 +54,7 @@ dependencies {
 
     // Navigation 3
     implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 
     // UI Tests
     androidTestImplementation(libs.androidx.ui.test.junit4)
