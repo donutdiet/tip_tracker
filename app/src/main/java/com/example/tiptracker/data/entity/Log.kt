@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "log")
 data class Log (
-    @PrimaryKey(autoGenerate = true) val id: Int,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "bill") val bill: Double,
     @ColumnInfo(name = "tip_percent") val tipPercent: Double,
     @ColumnInfo(name = "total") val total: Double,

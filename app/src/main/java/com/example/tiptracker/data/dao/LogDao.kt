@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LogDao {
     @Query("SELECT * FROM log ORDER BY date DESC")
-    fun getAllTips(): Flow<Log>
+    fun getAllTips(): Flow<List<Log>>
 
     @Query("SELECT * FROM log WHERE id = :id")
     fun getLogById(id: Int): Log?
