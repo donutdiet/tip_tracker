@@ -8,11 +8,16 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -29,6 +34,7 @@ import com.example.tiptracker.ui.navigation.NavigationState
 import com.example.tiptracker.ui.navigation.rememberNavigationState
 import com.example.tiptracker.ui.navigation.TOP_LEVEL_ROUTES
 import androidx.navigation3.ui.NavDisplay
+import com.example.tiptracker.R
 import com.example.tiptracker.data.DatabaseProvider
 import com.example.tiptracker.ui.navigation.RootKey
 import com.example.tiptracker.ui.navigation.TabKey
@@ -60,7 +66,7 @@ fun RootActivity() {
                 tabEntryProvider = tabEntryProvider
             )
         }
-        rootEntries()
+        rootEntries(navigateBack = { navigator.goBack() })
     }
 
     val rootEntries = rememberDecoratedNavEntries(
@@ -71,10 +77,14 @@ fun RootActivity() {
 
     NavDisplay(
         entries = rootEntries,
-        onBack = { navigator.goBack() }
+        onBack = { navigator.goBack() },
+        transitionSpec = { fullScreenTransform(isPop = false) },
+        popTransitionSpec = { fullScreenTransform(isPop = true) },
+        predictivePopTransitionSpec = { _ -> fullScreenTransform(isPop = true) },
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppRoot(
     navigationState: NavigationState,
@@ -88,6 +98,23 @@ fun AppRoot(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Tip Tracker") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                actions = {
+                    IconButton(onClick = { navigator.openFullscreen(RootKey.Settings) }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.settings),
+                            contentDescription = "Settings"
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
             NavigationBar {
                 TOP_LEVEL_ROUTES.forEach { (key, value) ->
@@ -153,4 +180,13 @@ private fun horizontalTabTransform(fromPosition: Int?, toPosition: Int?) =
         else ->
             slideInHorizontally(initialOffsetX = { -it }) togetherWith
                 slideOutHorizontally(targetOffsetX = { it })
+    }
+
+private fun fullScreenTransform(isPop: Boolean) =
+    if (isPop) {
+        slideInHorizontally(initialOffsetX = { -it }) togetherWith
+            slideOutHorizontally(targetOffsetX = { it })
+    } else {
+        slideInHorizontally(initialOffsetX = { it }) togetherWith
+            slideOutHorizontally(targetOffsetX = { -it })
     }

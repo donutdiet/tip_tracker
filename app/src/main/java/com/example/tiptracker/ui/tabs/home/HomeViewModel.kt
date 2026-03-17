@@ -61,7 +61,7 @@ sealed interface HomeAction {
     data class onReviewChange(val review: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
     data object onSaveLog : HomeAction
-    data object onClearLog : HomeAction
+    data object onClear : HomeAction
 }
 
 sealed interface HomeEvent {
@@ -69,9 +69,7 @@ sealed interface HomeEvent {
     data class ShowError(val message: String) : HomeEvent
 }
 
-class HomeViewModel(
-    private val logRepository: LogRepository
-) : ViewModel() {
+class HomeViewModel(private val logRepository: LogRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -98,7 +96,7 @@ class HomeViewModel(
             is HomeAction.onReviewChange -> { _uiState.update { it.copy(review = action.review) }}
             is HomeAction.onRatingChange -> { _uiState.update { it.copy(rating = action.rating) }}
             is HomeAction.onSaveLog -> { saveLog() }
-            is HomeAction.onClearLog -> { _uiState.update { it.copy(billAmount = "", tipPercent = "", partySize = "", roundUpTip = false, roundUpTotal = false, restaurantName = "", review = "", rating = 5.0) }}
+            is HomeAction.onClear -> { clearState() }
         }
     }
 
@@ -123,6 +121,21 @@ class HomeViewModel(
             } finally {
                 _uiState.update { it.copy(isSaving = false) }
             }
+        }
+    }
+
+    fun clearState() {
+        _uiState.update {
+            it.copy(
+                billAmount = "",
+                tipPercent = "",
+                partySize = "",
+                roundUpTip = false,
+                roundUpTotal = false,
+                restaurantName = "",
+                review = "",
+                rating = 5.0
+            )
         }
     }
 }

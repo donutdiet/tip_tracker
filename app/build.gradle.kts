@@ -48,6 +48,7 @@ android {
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui.text.google.fonts)
     androidTestImplementation(platform(libs.androidx.compose.bom))
 
     // Material Design 3
@@ -69,17 +70,14 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
 
+    // Datastore
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences.core)
+
     // UI Tests
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Add window size utils
-    implementation(libs.androidx.adaptive)
-
     // Integration with activities
     implementation(libs.androidx.activity.compose)
-    // Integration with ViewModels
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    // Integration with LiveData
-    implementation(libs.androidx.runtime.livedata)
 }
