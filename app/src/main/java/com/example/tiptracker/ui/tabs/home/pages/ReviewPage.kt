@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -89,6 +90,7 @@ fun ReviewPage(
             label = { Text("Restaurant Name") },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Next
             ),
             leadingIcon = {
@@ -109,6 +111,7 @@ fun ReviewPage(
             label = { Text("Review") },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Sentences,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
@@ -178,9 +181,10 @@ fun ReviewPage(
             Button(
                 onClick = { onAction(HomeAction.saveLog) },
                 shape = RoundedCornerShape(4.dp),
+                enabled = !uiState.isSaving,
                 modifier = Modifier.weight(3f)
             ) {
-                Text("Save")
+                Text(text = if (uiState.isSaving) "Saving..." else "Save")
             }
         }
     }

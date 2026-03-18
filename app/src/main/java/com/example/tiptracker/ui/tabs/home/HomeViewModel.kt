@@ -29,7 +29,7 @@ data class HomeUiState(
     val restaurantName: String = "",
     val review: String = "",
     val date: String = LocalDate.now().toString(),
-    val rating: Double = 7.0,
+    val rating: Double = 6.5,
     val isSaving: Boolean = false,
     val tipPreset1Percent: Int = 10,
     val tipPreset2Percent: Int = 15,
@@ -116,7 +116,7 @@ sealed interface HomeEvent {
 
 class HomeViewModel(
     private val logRepository: LogRepository,
-    private val settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -185,7 +185,7 @@ class HomeViewModel(
             is HomeAction.onReviewChange -> { _uiState.update { it.copy(review = action.review) }}
             is HomeAction.onDateChange -> { _uiState.update { it.copy(date = action.date) }}
             is HomeAction.onRatingChange -> { _uiState.update { it.copy(rating = action.rating) }}
-            is HomeAction.saveLog -> { saveLog() }
+            is HomeAction.saveLog -> { if (!_uiState.value.isSaving) saveLog() }
             is HomeAction.clear -> { clearState() }
         }
     }
@@ -205,9 +205,15 @@ class HomeViewModel(
                     date = _uiState.value.date
                 )
                 logRepository.insertLog(log)
+                clearState()
                 _events.send(HomeEvent.LogSaved)
             } catch (e: Exception) {
-                _events.send(HomeEvent.ShowError(e.message ?: "An error occurred while saving the log"))
+                val userMessage = when (e) {
+                    is android.database.sqlite.SQLiteFullException -> "Storage is full. Please free some space."
+                    else -> "Couldn't save your log. Please try again."
+                }
+                _events.send(HomeEvent.ShowError(userMessage))
+                android.util.Log.e("HomeViewModel", "Error saving log", e)
             } finally {
                 _uiState.update { it.copy(isSaving = false) }
             }

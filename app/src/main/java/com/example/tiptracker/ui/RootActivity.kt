@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -49,7 +51,7 @@ fun RootActivity() {
     val navigator = remember { Navigator(navigationState) }
 
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
-        tabEntries()
+        tabEntries(navigationState.snackBarHostState)
     }
 
     val rootEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
@@ -92,7 +94,6 @@ fun AppRoot(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Tip Tracker") },
@@ -126,7 +127,9 @@ fun AppRoot(
                     )
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(navigationState.snackBarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Box(
             modifier = Modifier

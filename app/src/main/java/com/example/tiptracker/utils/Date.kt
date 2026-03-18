@@ -18,7 +18,7 @@ fun convertDateToMillis(date: String): Long {
     }
     return try {
         parser.parse(date)?.time
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     } ?: System.currentTimeMillis()
 }

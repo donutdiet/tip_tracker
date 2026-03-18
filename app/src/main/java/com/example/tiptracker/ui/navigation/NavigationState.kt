@@ -1,5 +1,6 @@
 package com.example.tiptracker.ui.navigation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -34,13 +35,16 @@ fun rememberNavigationState(
     val tabBackStacks = topLevelRoutes.associateWith { key -> rememberNavBackStack(key) }
     val rootBackStack = rememberNavBackStack(appRoot)
 
+    val snackbarHostState = remember { SnackbarHostState() } // Create it here
+
     return remember(appRoot, startRoute, topLevelRoutes) {
         NavigationState(
             appRoot = appRoot,
             startTabRoute = startRoute,
             topLevelRoute = topLevelRoute,
             tabBackStacks = tabBackStacks,
-            rootBackStack = rootBackStack
+            rootBackStack = rootBackStack,
+            snackBarHostState = snackbarHostState
         )
     }
 }
@@ -60,7 +64,8 @@ class NavigationState(
     val startTabRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
     val tabBackStacks: Map<NavKey, NavBackStack<NavKey>>,
-    val rootBackStack: NavBackStack<NavKey>
+    val rootBackStack: NavBackStack<NavKey>,
+    val snackBarHostState: SnackbarHostState
 ) {
 
     /**
