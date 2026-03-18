@@ -1,4 +1,4 @@
-package com.example.tiptracker.ui.screens.settings
+package com.example.tiptracker.ui.features.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,13 +31,13 @@ fun SettingsScreen(
     onAction: (SettingsAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Update local values to display on UI as user scrolls; only write to DataStore on release
-    var tipPreset1Value by remember { mutableFloatStateOf(uiState.tipPercentPreset1.toFloat()) }
-    var tipPreset2Value by remember { mutableFloatStateOf(uiState.tipPercentPreset2.toFloat()) }
+    // Use local values to display on UI as user scrolls; only write to DataStore on slider release
+    var localTipPreset1Value by remember { mutableFloatStateOf(uiState.tipPreset1Percent.toFloat()) }
+    var localTipPreset2Value by remember { mutableFloatStateOf(uiState.tipPreset2Percent.toFloat()) }
 
-    LaunchedEffect(uiState.tipPercentPreset1, uiState.tipPercentPreset2) {
-        tipPreset1Value = uiState.tipPercentPreset1.toFloat()
-        tipPreset2Value = uiState.tipPercentPreset2.toFloat()
+    LaunchedEffect(uiState.tipPreset1Percent, uiState.tipPreset2Percent) {
+        localTipPreset1Value = uiState.tipPreset1Percent.toFloat()
+        localTipPreset2Value = uiState.tipPreset2Percent.toFloat()
     }
 
     Column(
@@ -56,12 +56,12 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Tip Percent Preset 1")
-            Text("${tipPreset1Value.roundToInt()}%")
+            Text("${localTipPreset1Value.roundToInt()}%")
         }
         Slider(
-            value = tipPreset1Value,
-            onValueChange = { tipPreset1Value = it },
-            onValueChangeFinished = { onAction(SettingsAction.setTipPercentPreset1(tipPreset1Value.roundToInt())) },
+            value = localTipPreset1Value,
+            onValueChange = { localTipPreset1Value = it },
+            onValueChangeFinished = { onAction(SettingsAction.setTipPreset1Percent(localTipPreset1Value.roundToInt())) },
             valueRange = 0f..50f,
             thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
         )
@@ -72,12 +72,12 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Tip Percent Preset 2")
-            Text("${tipPreset2Value.roundToInt()}%")
+            Text("${localTipPreset2Value.roundToInt()}%")
         }
         Slider(
-            value = tipPreset2Value,
-            onValueChange = { tipPreset2Value = it },
-            onValueChangeFinished = { onAction(SettingsAction.setTipPercentPreset2(tipPreset2Value.roundToInt())) },
+            value = localTipPreset2Value,
+            onValueChange = { localTipPreset2Value = it },
+            onValueChangeFinished = { onAction(SettingsAction.setTipPreset2Percent(localTipPreset2Value.roundToInt())) },
             valueRange = 0f..50f,
             thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
         )

@@ -1,4 +1,4 @@
-package com.example.tiptracker.ui.screens.settings
+package com.example.tiptracker.ui.features.settings
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding

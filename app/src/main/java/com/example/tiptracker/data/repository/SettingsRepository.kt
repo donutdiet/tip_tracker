@@ -11,10 +11,10 @@ class SettingsRepository(private val context: Context) {
     val darkMode: Flow<Boolean> = context.dataStore.data
         .map { it[SettingsKeys.DARK_MODE] ?: false }
 
-    val tipPercentPreset1 = context.dataStore.data
+    val tipPreset1Percent = context.dataStore.data
         .map { it[SettingsKeys.TIP_PERCENT_PRESET_1] ?: 10 }
 
-    val tipPercentPreset2 = context.dataStore.data
+    val tipPreset2Percent = context.dataStore.data
         .map { it[SettingsKeys.TIP_PERCENT_PRESET_2] ?: 15 }
 
     suspend fun saveDarkMode(enabled: Boolean) {

@@ -8,8 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.example.tiptracker.ui.screens.settings.SettingsRoot
-import com.example.tiptracker.ui.screens.settings.SettingsScreen
+import com.example.tiptracker.ui.features.settings.SettingsRoot
+import com.example.tiptracker.ui.tabs.home.HomeRoot
 
 fun EntryProviderScope<NavKey>.tabEntries() {
     entry<TabKey.Logs> {
@@ -19,9 +19,7 @@ fun EntryProviderScope<NavKey>.tabEntries() {
     }
 
     entry<TabKey.Home> {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(text = "New")
-        }
+        HomeRoot()
     }
 
     entry<TabKey.Profile> {

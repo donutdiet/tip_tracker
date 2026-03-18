@@ -1,4 +1,4 @@
-package com.example.tiptracker.ui.screens.settings
+package com.example.tiptracker.ui.features.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,22 +10,22 @@ import kotlinx.coroutines.launch
 
 data class SettingsState(
     val darkMode: Boolean = false,
-    val tipPercentPreset1: Int = 10,
-    val tipPercentPreset2: Int = 15
+    val tipPreset1Percent: Int = 10,
+    val tipPreset2Percent: Int = 15
 )
 
 sealed interface SettingsAction {
     data class setDarkMode(val enabled: Boolean) : SettingsAction
-    data class setTipPercentPreset1(val value: Int) : SettingsAction
-    data class setTipPercentPreset2(val value: Int) : SettingsAction
+    data class setTipPreset1Percent(val value: Int) : SettingsAction
+    data class setTipPreset2Percent(val value: Int) : SettingsAction
 }
 
 class SettingsViewModel(private val settingsRepository: SettingsRepository): ViewModel() {
 
     val uiState = combine(
         settingsRepository.darkMode,
-        settingsRepository.tipPercentPreset1,
-        settingsRepository.tipPercentPreset2
+        settingsRepository.tipPreset1Percent,
+        settingsRepository.tipPreset2Percent
     ) { darkMode, preset1, preset2 ->
         SettingsState(darkMode, preset1, preset2)
     }.stateIn(
@@ -38,8 +38,8 @@ class SettingsViewModel(private val settingsRepository: SettingsRepository): Vie
         viewModelScope.launch {
             when(action) {
                 is SettingsAction.setDarkMode -> settingsRepository.saveDarkMode(action.enabled)
-                is SettingsAction.setTipPercentPreset1 -> settingsRepository.saveTipPreset1(action.value)
-                is SettingsAction.setTipPercentPreset2 -> settingsRepository.saveTipPreset2(action.value)
+                is SettingsAction.setTipPreset1Percent -> settingsRepository.saveTipPreset1(action.value)
+                is SettingsAction.setTipPreset2Percent -> settingsRepository.saveTipPreset2(action.value)
             }
         }
     }

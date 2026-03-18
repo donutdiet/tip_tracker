@@ -6,7 +6,7 @@ import com.example.tiptracker.data.TipTrackerDatabase
 import com.example.tiptracker.data.dataStore
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.SettingsRepository
-import com.example.tiptracker.ui.screens.settings.SettingsViewModel
+import com.example.tiptracker.ui.features.settings.SettingsViewModel
 import com.example.tiptracker.ui.tabs.home.HomeViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -26,7 +26,7 @@ val appModule = module {
     single { SettingsRepository(get()) }
 
     // ViewModels
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), get()) }
     viewModel { SettingsViewModel(get()) }
 }
 
