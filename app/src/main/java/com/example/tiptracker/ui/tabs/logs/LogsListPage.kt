@@ -50,6 +50,10 @@ fun LogsListPage(
                 CircularProgressIndicator()
             }
 
+            uiState.errorMessage != null -> {
+                Text(text = uiState.errorMessage)
+            }
+
             uiState.logs.isEmpty() -> {
                 Text(text = "No logs saved")
             }

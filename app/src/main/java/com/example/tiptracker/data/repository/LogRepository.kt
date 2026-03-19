@@ -9,7 +9,7 @@ class LogRepository(
 ) {
     fun getAllLogs(): Flow<List<Log>> = logDao.getAllTips()
 
-    fun getLogById(id: Int): Log? = logDao.getLogById(id)
+    suspend fun getLogById(id: Int): Log? = logDao.getLogById(id)
 
     suspend fun insertLog(log: Log) {
         logDao.insertLog(log)

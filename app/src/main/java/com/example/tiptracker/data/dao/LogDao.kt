@@ -14,7 +14,7 @@ interface LogDao {
     fun getAllTips(): Flow<List<Log>>
 
     @Query("SELECT * FROM log WHERE id = :id")
-    fun getLogById(id: Int): Log?
+    suspend fun getLogById(id: Int): Log?
 
     @Insert
     suspend fun insertLog(log: Log)
