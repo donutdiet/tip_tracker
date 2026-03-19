@@ -80,4 +80,7 @@ dependencies {
 
     // Integration with activities
     implementation(libs.androidx.activity.compose)
+
+    // Splash Screen
+    implementation(libs.androidx.core.splashscreen)
 }
