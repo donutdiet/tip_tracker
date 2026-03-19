@@ -50,7 +50,7 @@ fun TipCalculatorPage(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .fillMaxSize()
-            .padding(12.dp, 4.dp)
+            .padding(16.dp, 4.dp)
     ) {
         OutlinedTextField(
             value = uiState.billAmount,
@@ -80,7 +80,7 @@ fun TipCalculatorPage(
             Text("Tip Percent")
 
             if (uiState.roundUpTip || uiState.roundUpTotal) {
-                Text("(${uiState.trueTipPercent}% after rounding)")
+                Text("(${uiState.formattedTrueTipPercent}% after rounding)")
             }
         }
         Row(

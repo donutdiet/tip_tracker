@@ -11,14 +11,16 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.example.tiptracker.ui.features.settings.SettingsRoot
 import com.example.tiptracker.ui.tabs.home.HomeRoot
+import com.example.tiptracker.ui.tabs.logs.LogsRoot
 
 fun EntryProviderScope<NavKey>.tabEntries(
+    openLogDetail: (Int) -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     entry<TabKey.Logs> {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(text = "Logs")
-        }
+        LogsRoot(
+            onLogClick = openLogDetail
+        )
     }
 
     entry<TabKey.Home> {

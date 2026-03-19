@@ -17,7 +17,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -51,7 +50,10 @@ fun RootActivity() {
     val navigator = remember { Navigator(navigationState) }
 
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
-        tabEntries(navigationState.snackBarHostState)
+        tabEntries(
+            openLogDetail = { navigator.openFullscreen(RootKey.LogDetail(it)) },
+            snackbarHostState =  navigationState.snackBarHostState
+        )
     }
 
     val rootEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {

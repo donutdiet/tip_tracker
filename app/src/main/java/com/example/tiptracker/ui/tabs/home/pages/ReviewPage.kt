@@ -82,7 +82,7 @@ fun ReviewPage(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .fillMaxSize()
-            .padding(12.dp, 4.dp)
+            .padding(16.dp, 4.dp)
     ) {
         OutlinedTextField(
             value = uiState.restaurantName,

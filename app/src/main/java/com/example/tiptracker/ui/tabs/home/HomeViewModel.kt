@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.SettingsRepository
+import com.example.tiptracker.utils.formatCurrency
+import com.example.tiptracker.utils.formatTipPercent
 import com.example.tiptracker.utils.roundToTwoDecimals
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +31,7 @@ data class HomeUiState(
     val restaurantName: String = "",
     val review: String = "",
     val date: String = LocalDate.now().toString(),
-    val rating: Double = 6.5,
+    val rating: Double = 5.0,
     val isSaving: Boolean = false,
     val tipPreset1Percent: Int = 10,
     val tipPreset2Percent: Int = 15,
@@ -80,17 +82,20 @@ data class HomeUiState(
         }
 
     val formattedTipAmount: String
-        get() = "%.2f".format(tipAmount)
+        get() = formatCurrency(tipAmount)
 
     val formattedTotal: String
-        get() = "%.2f".format(total)
+        get() = formatCurrency(total)
 
     val formattedTotalPerPerson: String
         get() {
             val party = partySize.toDoubleOrNull() ?: 0.0
             val perPerson = (total / party).roundToTwoDecimals()
-            return "%.2f".format(perPerson)
+            return formatCurrency(perPerson)
         }
+
+    val formattedTrueTipPercent: String
+        get() = formatTipPercent(trueTipPercent)
 }
 
 sealed interface HomeAction {
