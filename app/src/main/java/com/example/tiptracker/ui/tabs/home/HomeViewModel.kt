@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
+import kotlin.text.toDoubleOrNull
 
 data class HomeUiState(
     val billAmount: String = "",
@@ -61,6 +62,7 @@ data class HomeUiState(
                     val roundedTotal = ceil(rawTotal)
                     roundedTotal - bill
                 }
+
                 else -> rawTip
             }.roundToTwoDecimals()
         }
@@ -100,8 +102,8 @@ data class HomeUiState(
 
 sealed interface HomeAction {
     data class onBillAmountChange(val billAmount: String) : HomeAction
-    data object onTipPreset1Change : HomeAction
-    data object onTipPreset2Change : HomeAction
+    data object onTipPreset1Toggle : HomeAction
+    data object onTipPreset2Toggle : HomeAction
     data class onTipPercentChange(val tipPercent: String) : HomeAction
     data class onPartySizeChange(val partySize: String) : HomeAction
     data object onRoundUpTipToggle : HomeAction
@@ -146,26 +148,30 @@ class HomeViewModel(
     fun onAction(action: HomeAction) {
         when (action) {
             is HomeAction.onBillAmountChange -> _uiState.update { it.copy(billAmount = action.billAmount) }
-            is HomeAction.onTipPreset1Change -> {
+            is HomeAction.onTipPreset1Toggle -> {
                 val preset1Percent = uiState.value.tipPreset1Percent
                 _uiState.update {
+                    val newSwitchState = !it.tipPreset1
                     it.copy(
-                        tipPreset1 = !it.tipPreset1,
+                        tipPreset1 = newSwitchState,
                         tipPreset2 = false,
-                        tipPercent = preset1Percent.toString()
+                        tipPercent = if (newSwitchState) preset1Percent.toString() else ""
                     )
                 }
             }
-            is HomeAction.onTipPreset2Change -> {
+
+            is HomeAction.onTipPreset2Toggle -> {
                 val preset2Percent = uiState.value.tipPreset2Percent
                 _uiState.update {
+                    val newSwitchState = !it.tipPreset2
                     it.copy(
-                        tipPreset2 = !it.tipPreset2,
+                        tipPreset2 = newSwitchState,
                         tipPreset1 = false,
-                        tipPercent = preset2Percent.toString()
+                        tipPercent = if (newSwitchState) preset2Percent.toString() else ""
                     )
                 }
             }
+
             is HomeAction.onTipPercentChange -> {
                 _uiState.update {
                     it.copy(
@@ -175,17 +181,20 @@ class HomeViewModel(
                     )
                 }
             }
+
             is HomeAction.onPartySizeChange -> _uiState.update { it.copy(partySize = action.partySize) }
             is HomeAction.onRoundUpTipToggle -> {
                 _uiState.update {
                     it.copy(roundUpTip = !it.roundUpTip, roundUpTotal = false)
                 }
             }
+
             is HomeAction.onRoundUpTotalToggle -> {
                 _uiState.update {
                     it.copy(roundUpTotal = !it.roundUpTotal, roundUpTip = false)
                 }
             }
+
             is HomeAction.onRestaurantNameChange -> _uiState.update { it.copy(restaurantName = action.restaurantName) }
             is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
@@ -198,17 +207,27 @@ class HomeViewModel(
     private fun saveLog() {
         if (_uiState.value.isSaving) return
         viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
             try {
-                _uiState.update { it.copy(isSaving = true) }
+                val state = _uiState.value
+                val bill = state.billAmount.toDoubleOrNull() ?: 0.0
+                val tipPercent = state.tipPercent.toDoubleOrNull() ?: 0.0
+                val partySize = state.partySize.toIntOrNull() ?: 1
+
+                if (bill < 0.0 || tipPercent < 0.0 || partySize < 1) {
+                    _events.send(HomeEvent.ShowError("Please enter a valid bill, tip percent, and party size."))
+                    return@launch
+                }
+
                 val log = Log(
-                    bill = _uiState.value.billAmount.toDoubleOrNull() ?: 0.0,
-                    tipPercent = _uiState.value.trueTipPercent,
-                    total = _uiState.value.total,
-                    partySize = _uiState.value.partySize.toIntOrNull() ?: 1,
-                    restaurantName = _uiState.value.restaurantName,
-                    review = _uiState.value.review,
-                    rating = _uiState.value.rating,
-                    date = _uiState.value.date
+                    bill = bill,
+                    tipPercent = state.trueTipPercent,
+                    total = state.total,
+                    partySize = partySize,
+                    restaurantName = state.restaurantName,
+                    review = state.review,
+                    rating = state.rating,
+                    date = state.date
                 )
                 logRepository.insertLog(log)
                 clearState()

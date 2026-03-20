@@ -93,7 +93,7 @@ fun TipCalculatorPage(
             PresetTipButton(
                 percent = uiState.tipPreset1Percent,
                 isSelected = uiState.tipPreset1,
-                onClick = { onAction(HomeAction.onTipPreset1Change) },
+                onClick = { onAction(HomeAction.onTipPreset1Toggle) },
                 modifier = Modifier
                     .weight(2f)
                     .fillMaxHeight()
@@ -101,7 +101,7 @@ fun TipCalculatorPage(
             PresetTipButton(
                 percent = uiState.tipPreset2Percent,
                 isSelected = uiState.tipPreset2,
-                onClick = { onAction(HomeAction.onTipPreset2Change) },
+                onClick = { onAction(HomeAction.onTipPreset2Toggle) },
                 modifier = Modifier
                     .weight(2f)
                     .fillMaxHeight()
