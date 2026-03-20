@@ -145,7 +145,7 @@ class HomeViewModel(
 
     fun onAction(action: HomeAction) {
         when (action) {
-            is HomeAction.onBillAmountChange -> { _uiState.update { it.copy(billAmount = action.billAmount) }}
+            is HomeAction.onBillAmountChange -> _uiState.update { it.copy(billAmount = action.billAmount) }
             is HomeAction.onTipPreset1Change -> {
                 val preset1Percent = uiState.value.tipPreset1Percent
                 _uiState.update {
@@ -175,7 +175,7 @@ class HomeViewModel(
                     )
                 }
             }
-            is HomeAction.onPartySizeChange -> { _uiState.update { it.copy(partySize = action.partySize) }}
+            is HomeAction.onPartySizeChange -> _uiState.update { it.copy(partySize = action.partySize) }
             is HomeAction.onRoundUpTipToggle -> {
                 _uiState.update {
                     it.copy(roundUpTip = !it.roundUpTip, roundUpTotal = false)
@@ -186,16 +186,17 @@ class HomeViewModel(
                     it.copy(roundUpTotal = !it.roundUpTotal, roundUpTip = false)
                 }
             }
-            is HomeAction.onRestaurantNameChange -> { _uiState.update { it.copy(restaurantName = action.restaurantName) }}
-            is HomeAction.onReviewChange -> { _uiState.update { it.copy(review = action.review) }}
-            is HomeAction.onDateChange -> { _uiState.update { it.copy(date = action.date) }}
-            is HomeAction.onRatingChange -> { _uiState.update { it.copy(rating = action.rating) }}
-            is HomeAction.saveLog -> { if (!_uiState.value.isSaving) saveLog() }
-            is HomeAction.clear -> { clearState() }
+            is HomeAction.onRestaurantNameChange -> _uiState.update { it.copy(restaurantName = action.restaurantName) }
+            is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
+            is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
+            is HomeAction.onRatingChange -> _uiState.update { it.copy(rating = action.rating) }
+            is HomeAction.saveLog -> saveLog()
+            is HomeAction.clear -> clearState()
         }
     }
 
-    fun saveLog() {
+    private fun saveLog() {
+        if (_uiState.value.isSaving) return
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isSaving = true) }
@@ -225,7 +226,7 @@ class HomeViewModel(
         }
     }
 
-    fun clearState() {
+    private fun clearState() {
         _uiState.value = HomeUiState()
     }
 }

@@ -26,7 +26,7 @@ class LogsViewModel(
                 LogsUiState(
                     logs = emptyList(),
                     isLoading = false,
-                    errorMessage = "Error loading logs. Please try again."
+                    errorMessage = "Couldn't load logs. Please try again."
                 )
             )
             android.util.Log.e("LogsViewModel", "Error loading logs", e)

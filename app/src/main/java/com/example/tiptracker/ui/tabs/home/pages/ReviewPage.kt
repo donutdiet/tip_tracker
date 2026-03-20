@@ -108,7 +108,7 @@ fun ReviewPage(
         OutlinedTextField(
             value = uiState.review,
             onValueChange = { onAction(HomeAction.onReviewChange(it)) },
-            label = { Text("Review") },
+            label = { Text("Write a review") },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Text,
                 capitalization = KeyboardCapitalization.Sentences,

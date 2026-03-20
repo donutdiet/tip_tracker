@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
@@ -67,7 +68,7 @@ fun LogsListPage(
                     items(uiState.logs, key = { it.id }) { log ->
                         LogItem(
                             log = log,
-                            onClick = { onLogClick(log.id) }
+                            onLogItemClick = { onLogClick(log.id) }
                         )
                     }
                 }
@@ -79,10 +80,10 @@ fun LogsListPage(
 @Composable
 private fun LogItem(
     log: Log,
-    onClick: () -> Unit
+    onLogItemClick: () -> Unit
 ) {
     Card(
-        onClick = onClick,
+        onClick = onLogItemClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.background,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -99,7 +100,12 @@ private fun LogItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = log.restaurantName,)
+                Text(
+                    text = log.restaurantName,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
                 Text(text = "$${formatCurrency(log.total)}",)
             }
             Spacer(modifier = Modifier.height(2.dp))
@@ -110,7 +116,7 @@ private fun LogItem(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -178,7 +184,7 @@ fun LogsListPagePreview() {
                         tipPercent = 15.0,
                         total = 152.02,
                         partySize = 2,
-                        restaurantName = "The Pearl",
+                        restaurantName = "The Pearl sd flsdkfj sdlkfj sldfkj sdlfksdj flksdj fdsl",
                         review = "goysters",
                         rating = 8.6,
                         date = "2023-07-09"

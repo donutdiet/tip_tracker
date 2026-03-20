@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
+import com.example.tiptracker.ui.features.logdetail.LogDetailRoot
 import com.example.tiptracker.ui.features.settings.SettingsRoot
 import com.example.tiptracker.ui.tabs.home.HomeRoot
 import com.example.tiptracker.ui.tabs.logs.LogsRoot
@@ -37,11 +38,22 @@ fun EntryProviderScope<NavKey>.tabEntries(
 }
 
 fun EntryProviderScope<NavKey>.rootEntries(
-    navigateBack: () -> Unit
+    navigateBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onLogDeleted: () -> Unit
 ) {
     entry<RootKey.Settings> {
         SettingsRoot(
             onBack = navigateBack
+        )
+    }
+
+    entry<RootKey.LogDetail> { key ->
+        LogDetailRoot(
+            logId = key.id,
+            onBack = navigateBack,
+            snackbarHostState = snackbarHostState,
+            onLogDeleted = onLogDeleted
         )
     }
 }

@@ -11,12 +11,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tiptracker.ui.tabs.home.pages.ReviewPage
 import com.example.tiptracker.ui.tabs.home.pages.TipCalculatorPage
 import com.example.tiptracker.utils.ObserveAsEvents
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -26,16 +28,23 @@ fun HomeRoot(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var currentPage by rememberSaveable { mutableIntStateOf(0) }
+    val snackbarScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is HomeEvent.ShowError -> {
-                snackbarHostState.showSnackbar(event.message)
+                snackbarScope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    snackbarHostState.showSnackbar(event.message)
+                }
             }
 
             is HomeEvent.LogSaved -> {
                 currentPage = 0
-                snackbarHostState.showSnackbar("Log saved successfully!")
+                snackbarScope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    snackbarHostState.showSnackbar("Log saved successfully!")
+                }
             }
         }
     }

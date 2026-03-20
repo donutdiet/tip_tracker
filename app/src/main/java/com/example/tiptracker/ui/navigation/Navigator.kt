@@ -19,6 +19,8 @@ class Navigator(private val state: NavigationState) {
 
     // ----- Root layer (no scaffold chrome) -----
     fun openFullscreen(route: NavKey) {
+        // Prevent stale root-level snackbars from resurfacing after fullscreen navigation.
+        state.snackBarHostState.currentSnackbarData?.dismiss()
         state.rootBackStack.add(route)
     }
 

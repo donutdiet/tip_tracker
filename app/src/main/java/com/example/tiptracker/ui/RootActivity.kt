@@ -20,6 +20,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -40,6 +41,7 @@ import com.example.tiptracker.ui.navigation.RootKey
 import com.example.tiptracker.ui.navigation.TabKey
 import com.example.tiptracker.ui.navigation.rootEntries
 import com.example.tiptracker.ui.navigation.tabEntries
+import kotlinx.coroutines.launch
 
 @Composable
 fun RootActivity() {
@@ -49,6 +51,7 @@ fun RootActivity() {
         topLevelRoutes = TOP_LEVEL_ROUTES.keys
     )
     val navigator = remember { Navigator(navigationState) }
+    val rootScope = rememberCoroutineScope()
 
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         tabEntries(
@@ -65,7 +68,16 @@ fun RootActivity() {
                 tabEntryProvider = tabEntryProvider
             )
         }
-        rootEntries(navigateBack = { navigator.goBack() })
+        rootEntries(
+            navigateBack = { navigator.goBack() },
+            snackbarHostState = navigationState.snackBarHostState,
+            onLogDeleted = {
+                navigator.goBack()
+                rootScope.launch {
+                    navigationState.snackBarHostState.showSnackbar("Log deleted successfully!")
+                }
+            }
+        )
     }
 
     val rootEntries = rememberDecoratedNavEntries(
@@ -117,7 +129,9 @@ fun AppRoot(
             )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.background
+            ) {
                 TOP_LEVEL_ROUTES.forEach { (key, value) ->
                     val isSelected = key == navigationState.topLevelRoute
                     NavigationBarItem(
@@ -129,7 +143,7 @@ fun AppRoot(
                                 contentDescription = value.description,
                             )
                         },
-                        label = { Text(text = value.description) }
+                        label = { Text(text = value.description) },
                     )
                 }
             }

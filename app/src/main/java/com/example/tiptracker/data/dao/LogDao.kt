@@ -1,7 +1,6 @@
 package com.example.tiptracker.data.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
@@ -14,7 +13,7 @@ interface LogDao {
     fun getAllTips(): Flow<List<Log>>
 
     @Query("SELECT * FROM log WHERE id = :id")
-    suspend fun getLogById(id: Int): Log?
+    fun getLogById(id: Int): Flow<Log?>
 
     @Insert
     suspend fun insertLog(log: Log)
@@ -22,6 +21,6 @@ interface LogDao {
     @Update
     suspend fun updateLog(log: Log)
 
-    @Delete
-    suspend fun deleteLog(log: Log)
+    @Query("DELETE FROM log WHERE id = :id")
+    suspend fun deleteLogById(id: Int): Int
 }
