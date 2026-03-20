@@ -121,7 +121,7 @@ fun AppRoot(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Tip Tracker") },
+                title = { Text("Tip Tracker", style = MaterialTheme.typography.headlineSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),

@@ -19,14 +19,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.tiptracker.ui.components.CustomThumb
 import com.example.tiptracker.ui.components.LabeledSwitch
+import com.example.tiptracker.ui.theme.TipTrackerTheme
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(
+fun SettingsPage(
     uiState: SettingsState,
     onAction: (SettingsAction) -> Unit,
     modifier: Modifier = Modifier
@@ -41,7 +44,9 @@ fun SettingsScreen(
     }
 
     Column(
-        modifier = modifier.padding(vertical = 4.dp, horizontal = 24.dp)
+        modifier = modifier
+            .padding(vertical = 4.dp, horizontal = 24.dp)
+            .fillMaxSize()
     ) {
         LabeledSwitch(
             label = "Dark Mode",
@@ -55,7 +60,7 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Tip Percent Preset 1")
+            Text("Tip Percent Preset 1", style = MaterialTheme.typography.labelLarge)
             Text("${localTipPreset1Value.roundToInt()}%")
         }
         Slider(
@@ -71,7 +76,7 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Tip Percent Preset 2")
+            Text("Tip Percent Preset 2", style = MaterialTheme.typography.labelLarge)
             Text("${localTipPreset2Value.roundToInt()}%")
         }
         Slider(
@@ -80,6 +85,17 @@ fun SettingsScreen(
             onValueChangeFinished = { onAction(SettingsAction.setTipPreset2Percent(localTipPreset2Value.roundToInt())) },
             valueRange = 0f..50f,
             thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SettingsPagePreview() {
+    TipTrackerTheme { 
+        SettingsPage(
+            uiState = SettingsState(),
+            onAction = {}
         )
     }
 }

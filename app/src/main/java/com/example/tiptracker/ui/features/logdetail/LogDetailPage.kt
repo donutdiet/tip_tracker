@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.utils.formatCurrency
@@ -54,13 +55,23 @@ fun LogDetailPage(
                 .fillMaxWidth()
                 .verticalScroll(scrollState)
         ) {
-            Text(text = uiState.restaurantName)
+            Text(
+                text = uiState.restaurantName,
+                style = MaterialTheme.typography.headlineMedium
+            )
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = formatDateForDisplay(uiState.date))
+                Text(
+                    text = formatDateForDisplay(uiState.date),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = "·",
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(start = 6.dp, end = 4.dp)
+                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -70,17 +81,21 @@ fun LogDetailPage(
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
-                    Text(text = uiState.partySize.toString())
+                    Text(
+                        text = uiState.partySize.toString(),
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
+
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Review")
+                Text(text = "Review", style = MaterialTheme.typography.bodyLarge)
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -91,10 +106,13 @@ fun LogDetailPage(
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )
-                    Text(text = uiState.rating.toString())
+                    Text(
+                        text = uiState.rating.toString(),
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
             }
-            Text(text = uiState.review)
+            Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -115,8 +133,11 @@ fun LogDetailPage(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Bill")
-                    Text(text = "$${formatCurrency(uiState.bill)}")
+                    Text(text = "Bill", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "$${formatCurrency(uiState.bill)}",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Row(
@@ -124,8 +145,14 @@ fun LogDetailPage(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Tip")
-                    Text(text = "$${formatCurrency(uiState.tipAmount)}")
+                    Text(
+                        text = "Tip",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "$${formatCurrency(uiState.tipAmount)}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
                 HorizontalDivider(
                     modifier = Modifier.padding(bottom = 2.dp),
@@ -138,8 +165,14 @@ fun LogDetailPage(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Total")
-                    Text(text = "$${formatCurrency(uiState.total)}")
+                    Text(
+                        text = "Total",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "$${formatCurrency(uiState.total)}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
 
                 if (!expanded) {
@@ -148,7 +181,7 @@ fun LogDetailPage(
                         modifier = Modifier
                             .fillMaxWidth()
                     ) {
-                        Text("Show more")
+                        Text("Show more", style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 if (expanded) Spacer(modifier = Modifier.height(12.dp))
@@ -160,8 +193,11 @@ fun LogDetailPage(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Total per person")
-                            Text(text = "$${formatCurrency(uiState.totalPerPerson)}")
+                            Text(text = "Total per person", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "$${formatCurrency(uiState.totalPerPerson)}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
 
                         Row(
@@ -169,8 +205,11 @@ fun LogDetailPage(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Tip Percent")
-                            Text(text = "${formatTipPercent(uiState.tipPercent)}%")
+                            Text(text = "Tip Percent", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "${formatTipPercent(uiState.tipPercent)}%",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
 
                         Row(
@@ -178,7 +217,7 @@ fun LogDetailPage(
                             modifier = Modifier
                                 .fillMaxWidth()
                         ) {
-                            Text("Show less")
+                            Text("Show less", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

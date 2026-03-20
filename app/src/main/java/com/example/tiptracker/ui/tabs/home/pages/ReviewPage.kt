@@ -87,7 +87,9 @@ fun ReviewPage(
         OutlinedTextField(
             value = uiState.restaurantName,
             onValueChange = { onAction(HomeAction.onRestaurantNameChange(it)) },
-            label = { Text("Restaurant Name") },
+            label = {
+                Text("Restaurant Name", style = MaterialTheme.typography.titleSmall)
+            },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Text,
                 capitalization = KeyboardCapitalization.Words,
@@ -108,7 +110,9 @@ fun ReviewPage(
         OutlinedTextField(
             value = uiState.review,
             onValueChange = { onAction(HomeAction.onReviewChange(it)) },
-            label = { Text("Write a review") },
+            label = {
+                Text("Write a review", style = MaterialTheme.typography.titleSmall)
+            },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Text,
                 capitalization = KeyboardCapitalization.Sentences,
@@ -126,10 +130,22 @@ fun ReviewPage(
         OutlinedTextField(
             value = formatDateForDisplay(uiState.date),
             onValueChange = {},
-            label = { Text("Date") },
-            supportingText = { Text("Click the calendar icon to set the date") },
+            label = {
+                Text("Date", style = MaterialTheme.typography.titleSmall)
+            },
+            supportingText = {
+                Text(
+                    "Click the calendar icon to set the date",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            },
             readOnly = true,
-            placeholder = { Text("Tap to select a date") },
+            placeholder = {
+                Text(
+                    "Tap to select a date",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            },
             leadingIcon = {
                 IconButton(
                     onClick = { showDatePicker = true }
@@ -151,8 +167,22 @@ fun ReviewPage(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Rating")
-            Text("%.1f".format(localRatingValue))
+            Text("Rating", style = MaterialTheme.typography.bodyLarge)
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.star),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    "%.1f".format(localRatingValue),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
         }
         Slider(
             value = localRatingValue,
@@ -175,7 +205,7 @@ fun ReviewPage(
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier.weight(2f)
             ) {
-                Text("Back")
+                Text("Back", style = MaterialTheme.typography.labelLarge)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
@@ -184,7 +214,10 @@ fun ReviewPage(
                 enabled = !uiState.isSaving,
                 modifier = Modifier.weight(3f)
             ) {
-                Text(text = if (uiState.isSaving) "Saving..." else "Save")
+                Text(
+                    text = if (uiState.isSaving) "Saving..." else "Save",
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
     }
@@ -202,7 +235,7 @@ fun ReviewPage(
                         focusManager.clearFocus()
                     }
                 ) {
-                    Text("Ok")
+                    Text("Ok", style = MaterialTheme.typography.labelLarge)
                 }
             },
             dismissButton = {
@@ -212,7 +245,7 @@ fun ReviewPage(
                         focusManager.clearFocus()
                     }
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", style = MaterialTheme.typography.labelLarge)
                 }
             }
         ) {

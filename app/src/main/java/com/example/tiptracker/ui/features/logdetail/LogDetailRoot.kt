@@ -98,10 +98,13 @@ fun LogDetailRoot(
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = {
-                Text(text = "Delete log?")
+                Text(text = "Delete log?", style = MaterialTheme.typography.bodyLarge)
             },
             text = {
-                Text(text = "This action cannot be undone.")
+                Text(
+                    text = "This action cannot be undone.",
+                    style = MaterialTheme.typography.bodySmall
+                )
             },
             confirmButton = {
                 TextButton(
@@ -111,7 +114,10 @@ fun LogDetailRoot(
                     },
                     enabled = !uiState.isDeleting
                 ) {
-                    Text(text = "Delete")
+                    Text(
+                        text = "Delete",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             },
             dismissButton = {
@@ -119,7 +125,10 @@ fun LogDetailRoot(
                     onClick = { showDeleteConfirmation = false },
                     enabled = !uiState.isDeleting
                 ) {
-                    Text(text = "Cancel")
+                    Text(
+                        text = "Cancel",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         )

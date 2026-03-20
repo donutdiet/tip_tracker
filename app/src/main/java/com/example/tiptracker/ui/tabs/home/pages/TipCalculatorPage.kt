@@ -55,7 +55,9 @@ fun TipCalculatorPage(
         OutlinedTextField(
             value = uiState.billAmount,
             onValueChange = { onAction(HomeAction.onBillAmountChange(it)) },
-            label = { Text("Bill Amount") },
+            label = {
+                Text("Bill Amount", style = MaterialTheme.typography.titleSmall)
+            },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Next
@@ -77,12 +79,17 @@ fun TipCalculatorPage(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Tip Percent")
+            Text("Tip Percent", style = MaterialTheme.typography.labelLarge)
 
             if (uiState.roundUpTip || uiState.roundUpTotal) {
-                Text("(${uiState.formattedTrueTipPercent}% after rounding)")
+                Text(
+                    "(${uiState.formattedTrueTipPercent}% after rounding)",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -133,7 +140,9 @@ fun TipCalculatorPage(
         OutlinedTextField(
             value = uiState.partySize,
             onValueChange = { onAction(HomeAction.onPartySizeChange(it)) },
-            label = { Text("Party Size") },
+            label = {
+                Text("Party Size", style = MaterialTheme.typography.titleSmall)
+            },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
@@ -170,20 +179,33 @@ fun TipCalculatorPage(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Tip")
-            Text("$${uiState.formattedTipAmount}")
+            Text(
+                "Tip",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                "$${uiState.formattedTipAmount}",
+                style = MaterialTheme.typography.titleLarge
+            )
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Total")
-            Text("$${uiState.formattedTotal}")
+            Text(
+                "Total",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                "$${uiState.formattedTotal}",
+                style = MaterialTheme.typography.titleLarge
+            )
         }
         if (uiState.partySize.isNotBlank() && uiState.partySize.toInt() > 1) {
             Text(
                 text = "$${uiState.formattedTotalPerPerson}/ea",
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.align(Alignment.End)
             )
         }
@@ -198,7 +220,7 @@ fun TipCalculatorPage(
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier.weight(2f)
             ) {
-                Text("Clear")
+                Text("Clear", style = MaterialTheme.typography.labelLarge)
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
@@ -206,7 +228,10 @@ fun TipCalculatorPage(
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier.weight(3f)
             ) {
-                Text("Write a review")
+                Text(
+                    "Write a review",
+                    style = MaterialTheme.typography.labelLarge
+                )
             }
         }
     }
@@ -225,7 +250,7 @@ fun PresetTipButton(
             shape = RoundedCornerShape(20.dp),
             modifier = modifier
         ) {
-            Text("$percent%")
+            Text("$percent%", style = MaterialTheme.typography.bodyLarge)
         }
     } else {
         OutlinedButton(
@@ -234,7 +259,7 @@ fun PresetTipButton(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = modifier
         ) {
-            Text("$percent%")
+            Text("$percent%", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

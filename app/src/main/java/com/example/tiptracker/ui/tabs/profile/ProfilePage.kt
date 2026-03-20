@@ -67,7 +67,10 @@ fun ProfilePage(
             }
 
             uiState.errorMessage != null -> {
-                Text(text = uiState.errorMessage)
+                Text(
+                    text = uiState.errorMessage,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             else -> {
@@ -104,7 +107,10 @@ fun ProfilePageContent(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Rating distribution")
+            Text(
+                text = "Rating distribution",
+                style = MaterialTheme.typography.titleLarge
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -114,7 +120,10 @@ fun ProfilePageContent(
                     contentDescription = null,
                     modifier = Modifier.size(16.dp)
                 )
-                Text(text = "${uiState.logStats.avgRating} average")
+                Text(
+                    text = "${uiState.logStats.avgRating} average",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
 
@@ -126,10 +135,14 @@ fun ProfilePageContent(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Awards")
+            Text(
+                text = "Awards",
+                style = MaterialTheme.typography.titleLarge
+            )
             Icon(
                 painter = painterResource(R.drawable.trophy),
-                contentDescription = null
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -146,10 +159,17 @@ fun ProfilePageContent(
 
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Average Receipt")
-            Text(text = "${uiState.logStats.totalLogs} logs")
+            Text(
+                text = "Average Receipt",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Text(
+                text = "${uiState.logStats.totalLogs} logs",
+                style = MaterialTheme.typography.labelLarge
+            )
         }
 
         Surface(
@@ -168,8 +188,11 @@ fun ProfilePageContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Bill")
-                    Text(text = "$${formatCurrency(uiState.logStats.avgBill)}")
+                    Text(text = "Bill", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgBill)}",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Row(
@@ -177,8 +200,11 @@ fun ProfilePageContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Tip")
-                    Text(text = "$${formatCurrency(uiState.logStats.avgTipAmount)}")
+                    Text(text = "Tip", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgTipAmount)}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
                 HorizontalDivider(
                     modifier = Modifier.padding(bottom = 2.dp),
@@ -191,8 +217,11 @@ fun ProfilePageContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Total")
-                    Text(text = "$${formatCurrency(uiState.logStats.avgTotal)}")
+                    Text(text = "Total", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgTotal)}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
                 }
 
                 if (!expanded) {
@@ -201,7 +230,7 @@ fun ProfilePageContent(
                         modifier = Modifier
                             .fillMaxWidth()
                     ) {
-                        Text("Show more")
+                        Text("Show more", style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 if (expanded) Spacer(modifier = Modifier.height(12.dp))
@@ -213,8 +242,11 @@ fun ProfilePageContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Total per person")
-                            Text(text = "$${formatCurrency(uiState.logStats.avgTotalPerPerson)}")
+                            Text(text = "Total per person", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "$${formatCurrency(uiState.logStats.avgTotalPerPerson)}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
 
                         Row(
@@ -222,8 +254,11 @@ fun ProfilePageContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Tip percent")
-                            Text(text = "${formatTipPercent(uiState.logStats.avgTipPercent)}%")
+                            Text(text = "Tip percent", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "${formatTipPercent(uiState.logStats.avgTipPercent)}%",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
 
                         Row(
@@ -231,14 +266,17 @@ fun ProfilePageContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Party size")
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "Party size", style = MaterialTheme.typography.bodyMedium)
+                            Row {
                                 Icon(
                                     painter = painterResource(R.drawable.person),
                                     contentDescription = null,
                                     modifier = Modifier.size(20.dp)
                                 )
-                                Text(text = "${uiState.logStats.avgPartySize}")
+                                Text(
+                                    text = "${uiState.logStats.avgPartySize}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
 
@@ -247,7 +285,7 @@ fun ProfilePageContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                         ) {
-                            Text("Show less")
+                            Text("Show less", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -261,7 +299,7 @@ fun ProfilePageContent(
 fun AwardItem(
     log: Log,
     award: String,
-    metric: Any, // Scuffed way of accepting double (money/percents) or int (party size, length)
+    metric: String,
     onLogItemClick: (Int) -> Unit,
     @DrawableRes metricIcon: Int? = null
 ) {
@@ -285,14 +323,14 @@ fun AwardItem(
             ) {
                 Text(
                     text = log.restaurantName,
-                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = formatDateForDisplay(log.date),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
 
@@ -312,27 +350,34 @@ fun AwardItem(
                         Icon(
                             painter = painterResource(R.drawable.trophy),
                             contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = award,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
                 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (metricIcon != null) {
                         Icon(
                             painter = painterResource(metricIcon),
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    Text(text = metric.toString())
+                    Text(
+                        text = metric,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
                 }
             }
         }

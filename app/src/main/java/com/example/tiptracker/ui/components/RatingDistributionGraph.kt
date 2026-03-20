@@ -30,6 +30,14 @@ import kotlin.math.roundToInt
 fun RatingDistributionGraph(distribution: List<RatingCount>) {
     val isPreview = LocalInspectionMode.current
     val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val popupContainer = MaterialTheme.colorScheme.surfaceContainerHigh
+    val popupTextStyle = MaterialTheme.typography.bodySmall.copy(
+        color = MaterialTheme.colorScheme.onSurface
+    )
+    val axisTextStyle = MaterialTheme.typography.bodySmall.copy(
+        color = onSurfaceVariant
+    )
     val progressiveLabelShiftStep = 0.6.dp
     val xBins = remember { 0..20 }
     val xAxisLabels = remember {
@@ -89,7 +97,7 @@ fun RatingDistributionGraph(distribution: List<RatingCount>) {
                     modifier = modifier.offset(
                         x = (progressiveLabelShiftStep * index) + fineTuning
                     ),
-                    style = MaterialTheme.typography.bodySmall
+                    style = axisTextStyle
                 )
             }
         ),
@@ -103,9 +111,12 @@ fun RatingDistributionGraph(distribution: List<RatingCount>) {
         minValue = 0.0,
         indicatorProperties = HorizontalIndicatorProperties(
             count = IndicatorCount.StepBased(stepBy = 1.0),
+            textStyle = axisTextStyle,
             contentBuilder = { value -> value.roundToInt().toString() }
         ),
         popupProperties = PopupProperties(
+            textStyle = popupTextStyle,
+            containerColor = popupContainer,
             contentBuilder = { popup -> popup.value.roundToInt().toString() }
         ),
         animationMode = AnimationMode.Together { 0L }

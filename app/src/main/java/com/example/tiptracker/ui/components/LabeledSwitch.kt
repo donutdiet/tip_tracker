@@ -3,6 +3,7 @@ package com.example.tiptracker.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +22,10 @@ fun LabeledSwitch(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth()
     ) {
-        Text(label)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge
+        )
         Switch(
             checked = checked,
             onCheckedChange = onToggle

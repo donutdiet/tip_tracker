@@ -62,7 +62,7 @@ data class AwardsUiState(
         },
         lengthiestReview?.let {
             Award(
-                title = "Lengthiest Review",
+                title = "Longest Review",
                 log = it,
                 metric = "${it.review.length} characters"
             )

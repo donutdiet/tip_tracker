@@ -29,7 +29,7 @@ fun SettingsRoot(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Settings") },
+                title = { Text(text = "Settings", style = MaterialTheme.typography.headlineSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
@@ -44,7 +44,7 @@ fun SettingsRoot(
             )
         }
     ) { innerPadding ->
-        SettingsScreen(
+        SettingsPage(
             uiState = uiState,
             onAction = viewModel::onAction,
             modifier = Modifier

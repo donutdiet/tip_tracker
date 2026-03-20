@@ -129,6 +129,13 @@ fun EditLogPage(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Next
             ),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.hand_meal),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -210,24 +217,41 @@ fun EditLogPage(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Rating")
-            Text("%.1f".format(localRatingValue))
+        Column {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Rating", style = MaterialTheme.typography.bodyLarge)
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.star),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        "%.1f".format(localRatingValue),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+            Slider(
+                value = localRatingValue,
+                onValueChange = { localRatingValue = it },
+                onValueChangeFinished = {
+                    val rounded = (localRatingValue * 10f).roundToInt() / 10.0
+                    onAction(EditLogAction.RatingChanged(rounded))
+                },
+                valueRange = 0f..10f,
+                thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
+            )
         }
-        Slider(
-            value = localRatingValue,
-            onValueChange = { localRatingValue = it },
-            onValueChangeFinished = {
-                val rounded = (localRatingValue * 10f).roundToInt() / 10.0
-                onAction(EditLogAction.RatingChanged(rounded))
-            },
-            valueRange = 0f..10f,
-            thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
-        )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(

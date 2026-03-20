@@ -52,11 +52,17 @@ fun LogsListPage(
             }
 
             uiState.errorMessage != null -> {
-                Text(text = uiState.errorMessage)
+                Text(
+                    text = uiState.errorMessage,
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             uiState.logs.isEmpty() -> {
-                Text(text = "No logs saved")
+                Text(
+                    text = "No logs saved",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
 
             else -> {
@@ -102,11 +108,15 @@ private fun LogItem(
             ) {
                 Text(
                     text = log.restaurantName,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                Text(text = "$${formatCurrency(log.total)}",)
+                Text(
+                    text = "$${formatCurrency(log.total)}",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
             Spacer(modifier = Modifier.height(2.dp))
             Row(
@@ -129,7 +139,7 @@ private fun LogItem(
                         )
                         Text(
                             text = "${formatTipPercent(log.tipPercent)}%",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                     Row(
@@ -143,7 +153,7 @@ private fun LogItem(
                         )
                         Text(
                             text = "${log.partySize}",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                     Row(
@@ -157,13 +167,13 @@ private fun LogItem(
                         )
                         Text(
                             text = "${log.rating}",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                 }
                 Text(
                     text = formatDateForDisplay(log.date),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.labelMedium
                 )
             }
         }
