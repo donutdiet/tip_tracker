@@ -136,7 +136,7 @@ fun LogDetailPage(
                     Text(text = "Bill", style = MaterialTheme.typography.bodyLarge)
                     Text(
                         text = "$${formatCurrency(uiState.bill)}",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleLarge
                     )
                 }
 

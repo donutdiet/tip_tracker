@@ -191,7 +191,7 @@ fun ProfilePageContent(
                     Text(text = "Bill", style = MaterialTheme.typography.bodyLarge)
                     Text(
                         text = "$${formatCurrency(uiState.logStats.avgBill)}",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleLarge
                     )
                 }
 
