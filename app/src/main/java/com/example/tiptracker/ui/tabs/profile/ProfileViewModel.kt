@@ -9,6 +9,7 @@ import com.example.tiptracker.data.model.LogStats
 import com.example.tiptracker.data.model.RatingCount
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.utils.formatCurrency
+import com.example.tiptracker.utils.formatTipPercent
 import com.example.tiptracker.utils.roundToTwoDecimals
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
@@ -41,7 +42,7 @@ data class AwardsUiState(
             Award(
                 title = "Most Generous Tip",
                 log = it,
-                metric = "${it.tipPercent}%"
+                metric = "${formatTipPercent(it.tipPercent)}%"
             )
         },
         largestPartySize?.let {

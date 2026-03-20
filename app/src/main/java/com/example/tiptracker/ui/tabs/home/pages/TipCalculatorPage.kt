@@ -202,7 +202,7 @@ fun TipCalculatorPage(
                 style = MaterialTheme.typography.titleLarge
             )
         }
-        if (uiState.partySize.isNotBlank() && uiState.partySize.toInt() > 1) {
+        if ((uiState.partySize.toIntOrNull() ?: 0) > 1) {
             Text(
                 text = "$${uiState.formattedTotalPerPerson}/ea",
                 style = MaterialTheme.typography.bodyMedium,
