@@ -19,7 +19,7 @@ data class Award(
     val title: String,
     val log: Log,
     val metric: String,
-    @DrawableRes val iconRes: Int? = null
+    @param:DrawableRes val iconRes: Int? = null
 )
 
 data class AwardsUiState(

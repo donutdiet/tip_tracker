@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.ApplicationExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -11,7 +13,11 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
-android {
+kotlin {
+    jvmToolchain(11)
+}
+
+extensions.configure<ApplicationExtension> {
     namespace = "com.example.tiptracker"
     compileSdk = 36
 
@@ -34,13 +40,12 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlin {
-        jvmToolchain(11)
-    }
+
     buildFeatures {
         compose = true
     }
