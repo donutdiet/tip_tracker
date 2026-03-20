@@ -1,4 +1,4 @@
-package com.example.tiptracker.ui.tabs.logs
+package com.example.tiptracker.ui.tabs.profile
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -6,13 +6,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun LogsRoot(
+fun ProfileRoot(
     onLogClick: (Int) -> Unit,
-    viewModel: LogsViewModel = koinViewModel()
+    viewModel: ProfileViewModel = koinViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LogsListPage(
+    ProfilePage(
         uiState = uiState,
         onLogClick = onLogClick
     )

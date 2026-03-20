@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -147,7 +146,8 @@ fun LogDetailPage(
                                 .fillMaxWidth()
                         ) {
                             Text("Show less")
-                        }                    }
+                        }
+                    }
                 }
             }
         }

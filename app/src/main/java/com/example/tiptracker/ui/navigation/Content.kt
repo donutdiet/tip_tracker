@@ -1,12 +1,6 @@
 package com.example.tiptracker.ui.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.example.tiptracker.ui.features.editlog.EditLogRoot
@@ -14,6 +8,7 @@ import com.example.tiptracker.ui.features.logdetail.LogDetailRoot
 import com.example.tiptracker.ui.features.settings.SettingsRoot
 import com.example.tiptracker.ui.tabs.home.HomeRoot
 import com.example.tiptracker.ui.tabs.logs.LogsRoot
+import com.example.tiptracker.ui.tabs.profile.ProfileRoot
 
 fun EntryProviderScope<NavKey>.tabEntries(
     openLogDetail: (Int) -> Unit,
@@ -32,9 +27,9 @@ fun EntryProviderScope<NavKey>.tabEntries(
     }
 
     entry<TabKey.Profile> {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(text = "Profile")
-        }
+        ProfileRoot(
+            onLogClick = openLogDetail
+        )
     }
 }
 
