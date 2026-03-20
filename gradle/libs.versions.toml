@@ -2,6 +2,7 @@
 activityCompose = "1.13.0"
 agp = "9.1.0"
 composeBom = "2026.03.00"
+composeCharts = "0.2.5"
 datastore = "1.2.1"
 koin = "4.2.0"
 kotlin = "2.3.20"
@@ -45,6 +46,9 @@ androidx-datastore-preferences-core = { group = "androidx.datastore", name = "da
 
 # Splash Screen
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
+
+# Graphs
+compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -122,13 +122,17 @@ class EditLogViewModel(
                 val tipAmount = state.tipAmount.toDoubleOrNull() ?: 0.0
                 val partySize = state.partySize.toIntOrNull() ?: 1
 
-                if (bill <= 0.0 || tipAmount < 0.0 || partySize < 1) {
+                if (bill < 0.0 || tipAmount < 0.0 || partySize < 1) {
                     _events.send(EditLogEvent.ShowError("Please enter a valid bill, tip amount, and party size."))
                     return@launch
                 }
 
                 val total = (bill + tipAmount).roundToTwoDecimals()
-                val tipPercent = ((tipAmount / bill) * 100.0).roundToTwoDecimals()
+                val tipPercent = if (bill != 0.0) {
+                    ((tipAmount / bill) * 100.0).roundToTwoDecimals()
+                } else {
+                    0.0
+                }
 
                 logsRepository.updateLog(
                     Log(

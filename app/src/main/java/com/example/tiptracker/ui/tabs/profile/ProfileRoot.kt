@@ -14,6 +14,6 @@ fun ProfileRoot(
 
     ProfilePage(
         uiState = uiState,
-        onLogClick = onLogClick
+        onLogItemClick = onLogClick
     )
 }
