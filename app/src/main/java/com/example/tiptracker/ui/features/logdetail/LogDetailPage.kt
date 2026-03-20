@@ -68,8 +68,8 @@ fun LogDetailPage(
         Spacer(modifier = Modifier.height(8.dp))
 
         Surface(
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            shape = RoundedCornerShape(4.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
             modifier = Modifier.clickable(
                 onClick = { expanded = !expanded }
             )
@@ -109,6 +109,16 @@ fun LogDetailPage(
                     Text(text = "Total")
                     Text(text = "$${formatCurrency(uiState.total)}")
                 }
+
+                if (!expanded) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Text("Show more")
+                    }
+                }
                 if (expanded) Spacer(modifier = Modifier.height(12.dp))
 
                 AnimatedVisibility(visible = expanded) {
@@ -130,7 +140,14 @@ fun LogDetailPage(
                             Text(text = "Tip Percent")
                             Text(text = "${formatTipPercent(uiState.tipPercent)}%")
                         }
-                    }
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            Text("Show less")
+                        }                    }
                 }
             }
         }

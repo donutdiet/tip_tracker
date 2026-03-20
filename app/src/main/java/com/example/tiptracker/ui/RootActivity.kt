@@ -76,7 +76,14 @@ fun RootActivity() {
                 rootScope.launch {
                     navigationState.snackBarHostState.showSnackbar("Log deleted successfully!")
                 }
-            }
+            },
+            onLogUpdated = {
+                navigator.goBack()
+                rootScope.launch {
+                    navigationState.snackBarHostState.showSnackbar("Log updated successfully!")
+                }
+            },
+            openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) }
         )
     }
 

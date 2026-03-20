@@ -6,6 +6,7 @@ import com.example.tiptracker.data.TipTrackerDatabase
 import com.example.tiptracker.data.dataStore
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.SettingsRepository
+import com.example.tiptracker.ui.features.editlog.EditLogViewModel
 import com.example.tiptracker.ui.features.settings.SettingsViewModel
 import com.example.tiptracker.ui.features.logdetail.LogDetailViewModel
 import com.example.tiptracker.ui.tabs.home.HomeViewModel
@@ -32,6 +33,7 @@ val appModule = module {
     viewModel { SettingsViewModel(get()) }
     viewModel { LogsViewModel(get()) }
     viewModel { (logId: Int) -> LogDetailViewModel(logId = logId, logsRepository = get()) }
+    viewModel { (logId: Int) -> EditLogViewModel(logId = logId, logsRepository = get()) }
 }
 
 class TipTracker : Application() {

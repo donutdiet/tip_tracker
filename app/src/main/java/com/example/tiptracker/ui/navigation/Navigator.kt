@@ -27,6 +27,8 @@ class Navigator(private val state: NavigationState) {
     // Unified back for NavDisplay(onBack = ...)
     fun goBack() {
         if (state.isFullScreen) {
+            // Prevent stale root-level snackbars from resurfacing after fullscreen navigation.
+            state.snackBarHostState.currentSnackbarData?.dismiss()
             state.rootBackStack.removeLastOrNull()
         } else {
             goBackInCurrentTab()

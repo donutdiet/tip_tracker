@@ -2,12 +2,12 @@ package com.example.tiptracker.ui.features.logdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.sqlite.throwSQLiteException
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.utils.roundToTwoDecimals
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -46,13 +46,14 @@ class LogDetailViewModel(
     private val logId: Int,
     private val logsRepository: LogRepository
 ) : ViewModel() {
+
     private val _events = Channel<LogDetailEvent>()
     val events = _events.receiveAsFlow()
 
     private val isDeleting = MutableStateFlow(false)
     private val logFlow = logsRepository.getLogById(logId)
 
-    val uiState = combine(
+    val uiState: StateFlow<LogDetailUiState> = combine(
         isDeleting,
         logFlow
             .map { log ->
@@ -111,7 +112,6 @@ class LogDetailViewModel(
     private fun deleteLog() {
         if (isDeleting.value) return
         isDeleting.update { true }
-        android.util.Log.d("LogDetailViewModel", "deleting")
 
         viewModelScope.launch {
             try {

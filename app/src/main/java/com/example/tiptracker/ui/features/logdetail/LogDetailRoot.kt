@@ -31,8 +31,9 @@ import org.koin.core.parameter.parametersOf
 fun LogDetailRoot(
     logId: Int,
     onBack: () -> Unit,
-    snackbarHostState: SnackbarHostState,
+    onEdit: (Int) -> Unit,
     onLogDeleted: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     viewModel: LogDetailViewModel = koinViewModel(parameters = { parametersOf(logId) })
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,7 +68,7 @@ fun LogDetailRoot(
                 },
                 actions = {
                     if(!uiState.isLoading && !uiState.isNotFound && uiState.errorMessage == null) {
-                        IconButton(onClick = {}) {
+                        IconButton(onClick = { onEdit(logId) }) {
                             Icon(
                                 painter = painterResource(R.drawable.edit),
                                 contentDescription = "Edit"
