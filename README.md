@@ -1,29 +1,27 @@
 # Tip Tracker
+[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="120">](https://play.google.com/store/apps/details?id=com.jerrywang.tiptracker)
 
-## Description
-Tip Tracker is a native Android app built using Jetpack Compose designed to make the dining experience easier by providng a comprehensive tip calculator, restaurant logging capabilities, and an overview of dining spend habits.
+A native android app I built to help me keep track of all my restaurant visits.
 
-## Features
-- Calculate final check cost based on bill amount and tip percentage with rounding and bill splitting capabilities
-- Log detailed reviews of every dining experience with the ability to edit, delete, and favorite each entry
-- Get a complete overview of all your dining experiences in chronological order along with detailed descriptions of each visit
-- Analyze every aspect of your restaurant spending habits with various metrics to track your top experiences
-- Toggle between light/dark mode within the app
+## Feature List
+- Basic tip calculations with configurable tip percent presets, rounding, and bill splitting 
+- Full log history stored locally on the device
+- Rating distribution to visualize how you tend to rate restaurants
+- Restaurant awards to track fun metrics across your logs 
 
-## Installation
-Google Play Store link: https://play.google.com/store/apps/details?id=com.jerrywang.tiptracker
-
-OR
-1. Clone the repository `https://github.com/donutdiet/tip_tracker.git`
-2. Open the project in Android Studio
-3. Build and run the app on an Android Studio emulator or connect an Android device with USB debugging enabled
+## Architecture/Design Overview
+- MVI architecture pattern
+- Root NavDisplay for full-screen pages + tab NavDisplay for bottom navigation
+- One-time events handled using Channels
+- /ui - jetpack compose screen composables, viewmodels, state classes
+- /data - room database schema, entity classes, dao, repository
 
 ## Tech Stack
 - Kotlin
 - Jetpack Compose
-- ViewModel
-- SharedPreferences and DataStore
-- Dagger and Hilt
-
-## Contact
-For feedback or questions, contact me at jerrywangprojects@gmail.com
+- Room (SQLite) database
+- DataStore Preferences
+- Koin
+- Navigation 3
+- Material 3
+- [Vico](https://guide.vico.patrykandpatrick.com/)

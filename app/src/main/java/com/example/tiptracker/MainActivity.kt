@@ -1,36 +1,45 @@
 package com.example.tiptracker
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.example.tiptracker.screens.settings.SettingsViewModel
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import com.example.tiptracker.data.repository.SettingsRepository
+import com.example.tiptracker.ui.RootActivity
+import com.example.tiptracker.utils.setEdgeToEdgeConfig
 import com.example.tiptracker.ui.theme.TipTrackerTheme
-import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val viewModel by viewModels<SettingsViewModel>()
+    private val settingsRepository: SettingsRepository by inject()
+    private var isReady by mutableStateOf(false)
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        splashScreen.setKeepOnScreenCondition { !isReady }
+
+        lifecycleScope.launch {
+            settingsRepository.darkMode.first()
+            isReady = true
+        }
+
+        setEdgeToEdgeConfig()
+
         setContent {
-            val isDarkModeActive by viewModel.isDarkModeActive.collectAsState(initial = false)
-            TipTrackerTheme(
-                darkTheme = isDarkModeActive
-            ) {
-                TipTrackerApp(
-                    settingsViewModel = viewModel,
-                    isDarkModeActive = isDarkModeActive
-                )
+            val darkMode by settingsRepository.darkMode.collectAsState(initial = false)
+
+            TipTrackerTheme(darkTheme = darkMode) {
+                RootActivity()
             }
         }
     }
