@@ -118,10 +118,12 @@ fun ProfilePageContent(
                 Icon(
                     painter = painterResource(R.drawable.star),
                     contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
                     text = "${uiState.logStats.avgRating} average",
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -141,8 +143,7 @@ fun ProfilePageContent(
             )
             Icon(
                 painter = painterResource(R.drawable.trophy),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+                contentDescription = null
             )
         }
 
