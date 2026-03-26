@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.data.entity.Log
+import com.example.tiptracker.ui.theme.ScreenPadding
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
@@ -68,7 +69,7 @@ fun LogsListPage(
             else -> {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    contentPadding = ScreenPadding,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(uiState.logs, key = { it.id }) { log ->

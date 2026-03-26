@@ -43,6 +43,7 @@ import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.LogStats
 import com.example.tiptracker.data.model.RatingCount
 import com.example.tiptracker.ui.components.RatingDistributionGraph
+import com.example.tiptracker.ui.theme.ScreenPadding
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
@@ -99,8 +100,8 @@ fun ProfilePageContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
             .verticalScroll(scrollState)
+            .padding(paddingValues = ScreenPadding)
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -290,7 +291,6 @@ fun ProfilePageContent(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }

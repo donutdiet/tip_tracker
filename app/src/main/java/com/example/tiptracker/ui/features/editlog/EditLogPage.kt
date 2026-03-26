@@ -99,8 +99,8 @@ fun EditLogPage(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp, 4.dp)
             .verticalScroll(rememberScrollState())
+            .padding(16.dp, 4.dp)
     ) {
         OutlinedTextField(
             value = uiState.bill,
