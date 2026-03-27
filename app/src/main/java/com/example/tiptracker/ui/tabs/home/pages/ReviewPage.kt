@@ -124,6 +124,7 @@ fun ReviewPage(
             keyboardActions = KeyboardActions(
                 onDone = { focusManager.clearFocus() }
             ),
+            textStyle = MaterialTheme.typography.bodyMedium,
             minLines = 5,
             maxLines = 12,
             modifier = Modifier.fillMaxWidth()

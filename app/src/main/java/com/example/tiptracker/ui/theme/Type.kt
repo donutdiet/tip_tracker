@@ -63,7 +63,7 @@ val AppTypography = Typography(
 
     bodyLarge = baseline.bodyLarge.copy(
         fontFamily = bodyFontFamily,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.Medium
     ),
     bodyMedium = baseline.bodyMedium.copy(fontFamily = bodyFontFamily),
     bodySmall = baseline.bodySmall.copy(fontFamily = bodyFontFamily),
