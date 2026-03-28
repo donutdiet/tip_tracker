@@ -1,7 +1,7 @@
 [versions]
 activityCompose = "1.13.0"
 agp = "9.1.0"
-composeBom = "2026.03.00"
+composeBom = "2026.03.01"
 composeCharts = "0.2.5"
 datastore = "1.2.1"
 koin = "4.2.0"
@@ -10,7 +10,7 @@ ksp = "2.3.5"
 lifecycleViewmodelCompose = "2.10.0"
 nav3Core = "1.0.1"
 room = "2.8.4"
-uiTextGoogleFonts = "1.10.5"
+uiTextGoogleFonts = "1.10.6"
 datastorePreferencesCore = "1.2.1"
 coreSplashscreen = "1.2.0"
 
