@@ -35,7 +35,18 @@ val numberFontFamily = FontFamily(
 val baseline = Typography()
 
 // Extensions
-val Typography.titleLargeMono : TextStyle get() = titleLarge.copy(fontFamily = numberFontFamily)
+val Typography.titleLargeMono : TextStyle get() = titleLarge.copy(
+    fontFamily = numberFontFamily,
+    fontWeight = FontWeight.Bold
+)
+val Typography.titleMediumMono : TextStyle get() = titleMedium.copy(
+    fontFamily = numberFontFamily,
+    fontWeight = FontWeight.SemiBold
+)
+val Typography.titleSmallMono : TextStyle get() = titleSmall.copy(
+    fontFamily = numberFontFamily,
+    fontWeight = FontWeight.Medium
+)
 
 val AppTypography = Typography(
     // Playfair Display — large hero text only

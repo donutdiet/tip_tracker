@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.titleMediumMono
+import com.example.tiptracker.ui.theme.titleSmallMono
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.formatTipPercent
@@ -133,10 +135,10 @@ fun LogDetailPage(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Bill", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Bill", style = MaterialTheme.typography.titleMediumMono)
                     Text(
                         text = "$${formatCurrency(uiState.bill)}",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                 }
 
@@ -147,11 +149,11 @@ fun LogDetailPage(
                 ) {
                     Text(
                         text = "Tip",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                     Text(
                         text = "$${formatCurrency(uiState.tipAmount)}",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                 }
                 HorizontalDivider(
@@ -167,11 +169,11 @@ fun LogDetailPage(
                 ) {
                     Text(
                         text = "Total",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                     Text(
                         text = "$${formatCurrency(uiState.total)}",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                 }
 
@@ -193,10 +195,10 @@ fun LogDetailPage(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Total per person", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Total per person", style = MaterialTheme.typography.titleSmallMono)
                             Text(
                                 text = "$${formatCurrency(uiState.totalPerPerson)}",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.titleSmallMono
                             )
                         }
 
@@ -205,10 +207,10 @@ fun LogDetailPage(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Tip Percent", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Tip Percent", style = MaterialTheme.typography.titleSmallMono)
                             Text(
                                 text = "${formatTipPercent(uiState.tipPercent)}%",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.titleSmallMono
                             )
                         }
 

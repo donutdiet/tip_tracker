@@ -25,7 +25,8 @@ data class EditLogUiState(
     val isLoading: Boolean = true,
     val isNotFound: Boolean = false,
     val errorMessage: String? = null,
-    val isUpdating: Boolean = false
+    val isUpdating: Boolean = false,
+    val editsMade: Boolean = false
 )
 
 sealed interface EditLogAction {
@@ -55,20 +56,31 @@ class EditLogViewModel(
     private val _uiState = MutableStateFlow(EditLogUiState())
     val uiState: StateFlow<EditLogUiState> = _uiState.asStateFlow()
 
+    // Keep track of the state as it was when loaded from the database
+    private var initialUiState: EditLogUiState? = null
+
     init {
         loadLog()
     }
 
     fun onAction(action: EditLogAction) {
         when (action) {
-            is EditLogAction.BillChanged -> _uiState.update { it.copy(bill = action.bill) }
-            is EditLogAction.TipAmountChanged -> _uiState.update { it.copy(tipAmount = action.tipAmount) }
-            is EditLogAction.PartySizeChanged -> _uiState.update { it.copy(partySize = action.partySize) }
-            is EditLogAction.RestaurantNameChanged -> _uiState.update { it.copy(restaurantName = action.restaurantName) }
-            is EditLogAction.ReviewChanged -> _uiState.update { it.copy(review = action.review) }
-            is EditLogAction.DateChanged -> _uiState.update { it.copy(date = action.date) }
-            is EditLogAction.RatingChanged -> _uiState.update { it.copy(rating = action.rating) }
             EditLogAction.Update -> updateLog()
+            else -> {
+                _uiState.update { currentState ->
+                    val updatedState = when (action) {
+                        is EditLogAction.BillChanged -> currentState.copy(bill = action.bill)
+                        is EditLogAction.TipAmountChanged -> currentState.copy(tipAmount = action.tipAmount)
+                        is EditLogAction.PartySizeChanged -> currentState.copy(partySize = action.partySize)
+                        is EditLogAction.RestaurantNameChanged -> currentState.copy(restaurantName = action.restaurantName)
+                        is EditLogAction.ReviewChanged -> currentState.copy(review = action.review)
+                        is EditLogAction.DateChanged -> currentState.copy(date = action.date)
+                        is EditLogAction.RatingChanged -> currentState.copy(rating = action.rating)
+                    }
+                    // Calculate if the form is actually different from the original data
+                    updatedState.copy(editsMade = checkIfEditsMade(updatedState))
+                }
+            }
         }
     }
 
@@ -86,19 +98,22 @@ class EditLogViewModel(
                     return@launch
                 }
 
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        bill = log.bill.toString(),
-                        tipAmount = (log.total - log.bill).roundToTwoDecimals().toString(),
-                        partySize = log.partySize.toString(),
-                        restaurantName = log.restaurantName,
-                        review = log.review,
-                        date = log.date,
-                        rating = log.rating,
-                        errorMessage = null
-                    )
-                }
+                val loadedState = EditLogUiState(
+                    isLoading = false,
+                    bill = log.bill.toString(),
+                    tipAmount = (log.total - log.bill).roundToTwoDecimals().toString(),
+                    partySize = log.partySize.toString(),
+                    restaurantName = log.restaurantName,
+                    review = log.review,
+                    date = log.date,
+                    rating = log.rating,
+                    errorMessage = null,
+                    editsMade = false
+                )
+
+                initialUiState = loadedState
+                _uiState.value = loadedState
+
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -157,4 +172,14 @@ class EditLogViewModel(
         }
     }
 
+    private fun checkIfEditsMade(state: EditLogUiState): Boolean {
+        val initial = initialUiState ?: return false
+        return state.bill != initial.bill ||
+                state.tipAmount != initial.tipAmount ||
+                state.partySize != initial.partySize ||
+                state.restaurantName != initial.restaurantName ||
+                state.review != initial.review ||
+                state.date != initial.date ||
+                state.rating != initial.rating
+    }
 }

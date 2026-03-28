@@ -98,7 +98,7 @@ fun LogDetailRoot(
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
             title = {
-                Text(text = "Delete log?", style = MaterialTheme.typography.bodyLarge)
+                Text(text = "Delete log?", style = MaterialTheme.typography.titleMedium)
             },
             text = {
                 Text(
@@ -116,7 +116,8 @@ fun LogDetailRoot(
                 ) {
                     Text(
                         text = "Delete",
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             },
@@ -127,7 +128,8 @@ fun LogDetailRoot(
                 ) {
                     Text(
                         text = "Cancel",
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
