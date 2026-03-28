@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,10 @@ import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.LogStats
 import com.example.tiptracker.data.model.RatingCount
 import com.example.tiptracker.ui.components.RatingDistributionGraph
+import com.example.tiptracker.ui.theme.ScreenPadding
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.titleMediumMono
+import com.example.tiptracker.ui.theme.titleSmallMono
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.formatTipPercent
@@ -99,8 +103,8 @@ fun ProfilePageContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
             .verticalScroll(scrollState)
+            .padding(paddingValues = ScreenPadding)
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -109,7 +113,7 @@ fun ProfilePageContent(
         ) {
             Text(
                 text = "Rating distribution",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -139,7 +143,7 @@ fun ProfilePageContent(
         ) {
             Text(
                 text = "Awards",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
             Icon(
                 painter = painterResource(R.drawable.trophy),
@@ -165,7 +169,7 @@ fun ProfilePageContent(
         ) {
             Text(
                 text = "Average Receipt",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
             Text(
                 text = "${uiState.logStats.totalLogs} logs",
@@ -189,10 +193,10 @@ fun ProfilePageContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Bill", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Bill", style = MaterialTheme.typography.titleMediumMono)
                     Text(
                         text = "$${formatCurrency(uiState.logStats.avgBill)}",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                 }
 
@@ -201,10 +205,10 @@ fun ProfilePageContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Tip", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Tip", style = MaterialTheme.typography.titleMediumMono)
                     Text(
                         text = "$${formatCurrency(uiState.logStats.avgTipAmount)}",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                 }
                 HorizontalDivider(
@@ -218,10 +222,10 @@ fun ProfilePageContent(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Total", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
                     Text(
                         text = "$${formatCurrency(uiState.logStats.avgTotal)}",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMediumMono
                     )
                 }
 
@@ -243,10 +247,10 @@ fun ProfilePageContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Total per person", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Total per person", style = MaterialTheme.typography.titleSmallMono)
                             Text(
                                 text = "$${formatCurrency(uiState.logStats.avgTotalPerPerson)}",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.titleSmallMono
                             )
                         }
 
@@ -255,10 +259,10 @@ fun ProfilePageContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Tip percent", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "Tip percent", style = MaterialTheme.typography.titleSmallMono)
                             Text(
                                 text = "${formatTipPercent(uiState.logStats.avgTipPercent)}%",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.titleSmallMono
                             )
                         }
 
@@ -267,8 +271,8 @@ fun ProfilePageContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Party size", style = MaterialTheme.typography.bodyMedium)
-                            Row {
+                            Text(text = "Party size", style = MaterialTheme.typography.titleSmallMono)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     painter = painterResource(R.drawable.person),
                                     contentDescription = null,
@@ -276,7 +280,7 @@ fun ProfilePageContent(
                                 )
                                 Text(
                                     text = "${uiState.logStats.avgPartySize}",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = MaterialTheme.typography.titleSmallMono
                                 )
                             }
                         }
@@ -290,7 +294,6 @@ fun ProfilePageContent(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }

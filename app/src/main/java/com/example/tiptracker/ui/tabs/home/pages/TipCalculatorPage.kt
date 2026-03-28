@@ -1,7 +1,10 @@
 package com.example.tiptracker.ui.tabs.home.pages
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -17,26 +20,35 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
-import com.example.tiptracker.ui.components.LabeledSwitch
 import com.example.tiptracker.ui.tabs.home.HomeAction
 import com.example.tiptracker.ui.tabs.home.HomeUiState
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.titleLargeMono
+import com.example.tiptracker.ui.theme.titleMediumMono
+import com.example.tiptracker.ui.theme.titleSmallMono
 
 @Composable
 fun TipCalculatorPage(
@@ -83,13 +95,20 @@ fun TipCalculatorPage(
 
             if (uiState.roundUpTip || uiState.roundUpTotal) {
                 Text(
-                    "(${uiState.formattedTrueTipPercent}% after rounding)",
+                    text = buildAnnotatedString {
+                        withStyle(
+                            style = MaterialTheme.typography.titleSmallMono.toSpanStyle()
+                        ) {
+                            append("${uiState.formattedTrueTipPercent}%")
+                        }
+                        append("  after rounding up")
+                    },
                     style = MaterialTheme.typography.bodySmall
                 )
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -132,7 +151,7 @@ fun TipCalculatorPage(
                 singleLine = true,
                 modifier = Modifier
                     .weight(3f)
-                    .fillMaxHeight()
+                    .height(56.dp)
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -142,6 +161,21 @@ fun TipCalculatorPage(
             onValueChange = { onAction(HomeAction.onPartySizeChange(it)) },
             label = {
                 Text("Party Size", style = MaterialTheme.typography.titleSmall)
+            },
+            supportingText = {
+                if ((uiState.partySize.toIntOrNull() ?: 0) > 1) {
+                    Text(
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = MaterialTheme.typography.titleMediumMono.toSpanStyle()
+                            ) {
+                                append("$${uiState.formattedTotalPerPerson}")
+                            }
+                            append(" per person")
+                        },
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number,
@@ -160,19 +194,7 @@ fun TipCalculatorPage(
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LabeledSwitch(
-            label = "Round up tip?",
-            checked = uiState.roundUpTip,
-            onToggle = { onAction(HomeAction.onRoundUpTipToggle) }
-        )
-        LabeledSwitch(
-            label = "Round up total?",
-            checked = uiState.roundUpTotal,
-            onToggle = { onAction(HomeAction.onRoundUpTotalToggle) }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -180,34 +202,53 @@ fun TipCalculatorPage(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                "Tip",
-                style = MaterialTheme.typography.titleLarge
+                text = "Tip",
+                style = MaterialTheme.typography.titleMediumMono
             )
-            Text(
-                "$${uiState.formattedTipAmount}",
-                style = MaterialTheme.typography.titleLarge
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "$${uiState.formattedTipAmount}",
+                    style = MaterialTheme.typography.titleLargeMono
+                )
+                IconButton(onClick = { onAction(HomeAction.onRoundUpTipToggle) }) {
+                    Icon(
+                        painter = painterResource(R.drawable.decimal_increase),
+                        contentDescription = "Round up tip amount",
+                        tint = if (uiState.roundUpTip) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceDim
+                    )
+                }
+            }
         }
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outline
+        )
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                "Total",
-                style = MaterialTheme.typography.titleLarge
+                text = "Total",
+                style = MaterialTheme.typography.titleMediumMono
             )
-            Text(
-                "$${uiState.formattedTotal}",
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        if ((uiState.partySize.toIntOrNull() ?: 0) > 1) {
-            Text(
-                text = "$${uiState.formattedTotalPerPerson}/ea",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.align(Alignment.End)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "$${uiState.formattedTotal}",
+                    style = MaterialTheme.typography.titleLargeMono
+                )
+                IconButton(onClick = { onAction(HomeAction.onRoundUpTotalToggle) }) {
+                    Icon(
+                        painter = painterResource(R.drawable.decimal_increase),
+                        contentDescription = "Round up total amount",
+                        tint = if (uiState.roundUpTotal) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceDim
+                    )
+                }
+            }
         }
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -244,22 +285,42 @@ fun PresetTipButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (isSelected) {
-        Button(
-            onClick = onClick,
-            shape = RoundedCornerShape(20.dp),
-            modifier = modifier
+    val cornerRadius by animateDpAsState(
+        targetValue = if (isSelected) 16.dp else 4.dp,
+        label = "cornerRadius"
+    )
+
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        label = "backgroundColor"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        label = "contentColor"
+    )
+
+    val borderStrokeWidth by animateDpAsState(
+        targetValue = if (isSelected) 0.dp else 1.dp,
+        label = "borderWidth"
+    )
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(cornerRadius),
+        color = backgroundColor,
+        contentColor = contentColor,
+        border = if (borderStrokeWidth > 0.dp) BorderStroke(borderStrokeWidth, MaterialTheme.colorScheme.outline) else null,
+        modifier = modifier
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text("$percent%", style = MaterialTheme.typography.bodyLarge)
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            shape = RoundedCornerShape(4.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            modifier = modifier
-        ) {
-            Text("$percent%", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = "$percent%",
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
     }
 }

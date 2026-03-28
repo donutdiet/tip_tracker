@@ -25,12 +25,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.data.entity.Log
+import com.example.tiptracker.ui.theme.ScreenPadding
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.displayFontFamily
+import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.formatTipPercent
@@ -68,7 +72,7 @@ fun LogsListPage(
             else -> {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    contentPadding = ScreenPadding,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(uiState.logs, key = { it.id }) { log ->
@@ -115,7 +119,7 @@ private fun LogItem(
                 )
                 Text(
                     text = "$${formatCurrency(log.total)}",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMediumMono
                 )
             }
             Spacer(modifier = Modifier.height(2.dp))
@@ -128,20 +132,6 @@ private fun LogItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.hand_meal),
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = "${formatTipPercent(log.tipPercent)}%",
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -167,6 +157,20 @@ private fun LogItem(
                         )
                         Text(
                             text = "${log.rating}",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.hand_meal),
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "${formatTipPercent(log.tipPercent)}%",
                             style = MaterialTheme.typography.labelMedium
                         )
                     }

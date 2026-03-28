@@ -1,6 +1,7 @@
 package com.example.tiptracker.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.googlefonts.Font
@@ -25,20 +26,40 @@ val displayFontFamily = FontFamily(
     Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Bold),
 )
 
+val numberFontFamily = FontFamily(
+    Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = provider, weight = FontWeight.Normal),
+    Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = provider, weight = FontWeight.Bold),
+)
+
 // Default Material 3 typography values
 val baseline = Typography()
+
+// Extensions
+val Typography.titleLargeMono : TextStyle get() = titleLarge.copy(
+    fontFamily = numberFontFamily,
+    fontWeight = FontWeight.Bold
+)
+val Typography.titleMediumMono : TextStyle get() = titleMedium.copy(
+    fontFamily = numberFontFamily,
+    fontWeight = FontWeight.SemiBold
+)
+val Typography.titleSmallMono : TextStyle get() = titleSmall.copy(
+    fontFamily = numberFontFamily,
+    fontWeight = FontWeight.Medium
+)
 
 val AppTypography = Typography(
     // Playfair Display — large hero text only
     displayLarge = baseline.displayLarge.copy(fontFamily = displayFontFamily),
     displayMedium = baseline.displayMedium.copy(fontFamily = displayFontFamily),
     displaySmall = baseline.displaySmall.copy(fontFamily = displayFontFamily),
+
     headlineLarge = baseline.headlineLarge.copy(fontFamily = displayFontFamily),
     headlineMedium = baseline.headlineMedium.copy(fontFamily = displayFontFamily),
     headlineSmall = baseline.headlineSmall.copy(fontFamily = displayFontFamily),
 
     // Inter — everything functional
-    titleLarge = baseline.titleMedium.copy(
+    titleLarge = baseline.titleLarge.copy(
         fontFamily = bodyFontFamily,
         fontWeight = FontWeight.Bold
     ),
@@ -50,12 +71,14 @@ val AppTypography = Typography(
         fontFamily = bodyFontFamily,
         fontWeight = FontWeight.Medium
     ),
+
     bodyLarge = baseline.bodyLarge.copy(
         fontFamily = bodyFontFamily,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.Medium
     ),
     bodyMedium = baseline.bodyMedium.copy(fontFamily = bodyFontFamily),
     bodySmall = baseline.bodySmall.copy(fontFamily = bodyFontFamily),
+
     labelLarge = baseline.labelLarge.copy(
         fontFamily = bodyFontFamily,
         fontWeight = FontWeight.Medium

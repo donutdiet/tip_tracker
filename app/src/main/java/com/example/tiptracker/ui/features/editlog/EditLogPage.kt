@@ -99,8 +99,8 @@ fun EditLogPage(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp, 4.dp)
             .verticalScroll(rememberScrollState())
+            .padding(16.dp, 4.dp)
     ) {
         OutlinedTextField(
             value = uiState.bill,
@@ -182,7 +182,7 @@ fun EditLogPage(
         OutlinedTextField(
             value = uiState.review,
             onValueChange = { onAction(EditLogAction.ReviewChanged(it)) },
-            label = { Text("Write a review") },
+            label = { Text("Edit your review") },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Text,
                 capitalization = KeyboardCapitalization.Sentences,
@@ -191,6 +191,7 @@ fun EditLogPage(
             keyboardActions = KeyboardActions(
                 onDone = { focusManager.clearFocus() }
             ),
+            textStyle = MaterialTheme.typography.bodyMedium,
             minLines = 4,
             modifier = Modifier.fillMaxWidth()
         )
