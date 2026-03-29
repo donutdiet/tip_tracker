@@ -61,6 +61,23 @@ fun LogDetailPage(
                 text = uiState.restaurantName,
                 style = MaterialTheme.typography.headlineMedium
             )
+            uiState.address?.let { it ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.location),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
@@ -240,6 +257,7 @@ fun LogDetailPagePreview() {
                 total = 153.74,
                 partySize = 2,
                 restaurantName = "The Pearl",
+                address = "test address",
                 review = "goysters were so geurch",
                 rating = 8.6,
                 date = "2026-03-21",

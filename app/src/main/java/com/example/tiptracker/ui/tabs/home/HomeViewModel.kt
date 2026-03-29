@@ -30,6 +30,7 @@ data class HomeUiState(
     val roundUpTip: Boolean = false,
     val roundUpTotal: Boolean = false,
     val restaurantName: String = "",
+    val address: String = "",
     val review: String = "",
     val date: String = LocalDate.now().toString(),
     val rating: Double = 5.0,
@@ -109,6 +110,7 @@ sealed interface HomeAction {
     data object onRoundUpTipToggle : HomeAction
     data object onRoundUpTotalToggle : HomeAction
     data class onRestaurantNameChange(val restaurantName: String) : HomeAction
+    data class onAddressChange(val address: String) : HomeAction
     data class onReviewChange(val review: String) : HomeAction
     data class onDateChange(val date: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
@@ -196,6 +198,7 @@ class HomeViewModel(
             }
 
             is HomeAction.onRestaurantNameChange -> _uiState.update { it.copy(restaurantName = action.restaurantName) }
+            is HomeAction.onAddressChange -> _uiState.update { it.copy(address = action.address) }
             is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
             is HomeAction.onRatingChange -> _uiState.update { it.copy(rating = action.rating) }
@@ -213,6 +216,7 @@ class HomeViewModel(
                 val bill = state.billAmount.toDoubleOrNull() ?: 0.0
                 val tipPercent = state.tipPercent.toDoubleOrNull() ?: 0.0
                 val partySize = state.partySize.toIntOrNull() ?: 1
+                val address = state.address.ifEmpty { null }
 
                 if (bill < 0.0 || tipPercent < 0.0 || partySize < 1) {
                     _events.send(HomeEvent.ShowError("Please enter a valid bill, tip percent, and party size."))
@@ -225,7 +229,7 @@ class HomeViewModel(
                     total = state.total,
                     partySize = partySize,
                     restaurantName = state.restaurantName,
-                    address = null,
+                    address = address,
                     review = state.review,
                     rating = state.rating,
                     date = state.date

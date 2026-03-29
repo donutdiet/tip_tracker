@@ -19,6 +19,7 @@ data class EditLogUiState(
     val tipAmount: String = "",
     val partySize: String = "",
     val restaurantName: String = "",
+    val address: String = "",
     val review: String = "",
     val date: String = "",
     val rating: Double = 5.0,
@@ -34,6 +35,7 @@ sealed interface EditLogAction {
     data class TipAmountChanged(val tipAmount: String) : EditLogAction
     data class PartySizeChanged(val partySize: String) : EditLogAction
     data class RestaurantNameChanged(val restaurantName: String) : EditLogAction
+    data class AddressChanged(val address: String) : EditLogAction
     data class ReviewChanged(val review: String) : EditLogAction
     data class DateChanged(val date: String) : EditLogAction
     data class RatingChanged(val rating: Double) : EditLogAction
@@ -73,6 +75,7 @@ class EditLogViewModel(
                         is EditLogAction.TipAmountChanged -> currentState.copy(tipAmount = action.tipAmount)
                         is EditLogAction.PartySizeChanged -> currentState.copy(partySize = action.partySize)
                         is EditLogAction.RestaurantNameChanged -> currentState.copy(restaurantName = action.restaurantName)
+                        is EditLogAction.AddressChanged -> currentState.copy(address = action.address)
                         is EditLogAction.ReviewChanged -> currentState.copy(review = action.review)
                         is EditLogAction.DateChanged -> currentState.copy(date = action.date)
                         is EditLogAction.RatingChanged -> currentState.copy(rating = action.rating)
@@ -104,6 +107,7 @@ class EditLogViewModel(
                     tipAmount = (log.total - log.bill).roundToTwoDecimals().toString(),
                     partySize = log.partySize.toString(),
                     restaurantName = log.restaurantName,
+                    address = log.address ?: "",
                     review = log.review,
                     date = log.date,
                     rating = log.rating,
@@ -136,6 +140,7 @@ class EditLogViewModel(
                 val bill = state.bill.toDoubleOrNull() ?: 0.0
                 val tipAmount = state.tipAmount.toDoubleOrNull() ?: 0.0
                 val partySize = state.partySize.toIntOrNull() ?: 1
+                val address = state.address.ifEmpty { null }
 
                 if (bill < 0.0 || tipAmount < 0.0 || partySize < 1) {
                     _events.send(EditLogEvent.ShowError("Please enter a valid bill, tip amount, and party size."))
@@ -157,7 +162,7 @@ class EditLogViewModel(
                         total = total,
                         partySize = partySize,
                         restaurantName = state.restaurantName,
-                        address = null,
+                        address = address,
                         review = state.review,
                         rating = state.rating,
                         date = state.date
