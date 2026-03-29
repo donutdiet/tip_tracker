@@ -111,6 +111,29 @@ fun ReviewPage(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
+            value = uiState.address,
+            onValueChange = { onAction(HomeAction.onAddressChange(it)) },
+            label = {
+                Text("Address", style = MaterialTheme.typography.titleSmall)
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Words,
+                imeAction = ImeAction.Next
+            ),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.location),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
             value = uiState.review,
             onValueChange = { onAction(HomeAction.onReviewChange(it)) },
             label = {

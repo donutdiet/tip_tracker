@@ -1,13 +1,20 @@
 package com.example.tiptracker.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.tiptracker.data.dao.LogDao
 import com.example.tiptracker.data.entity.Log
 
-@Database(entities = [Log::class], version = 1)
+@Database(
+    version = 2,
+    entities = [Log::class],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2)
+    ]
+)
 abstract class TipTrackerDatabase : RoomDatabase() {
     abstract fun logDao(): LogDao
 }

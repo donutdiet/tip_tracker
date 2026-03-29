@@ -180,6 +180,26 @@ fun EditLogPage(
         )
 
         OutlinedTextField(
+            value = uiState.address,
+            onValueChange = { onAction(EditLogAction.AddressChanged(it)) },
+            label = { Text("Address") },
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Words,
+                imeAction = ImeAction.Next
+            ),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.location),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
             value = uiState.review,
             onValueChange = { onAction(EditLogAction.ReviewChanged(it)) },
             label = { Text("Edit your review") },
@@ -310,6 +330,7 @@ fun EditLogPagePreview() {
                 tipAmount = "25.62",
                 partySize = "2",
                 restaurantName = "The Pearl",
+                address = "address",
                 review = "Great food and service.",
                 date = "2026-03-21",
                 rating = 8.6,

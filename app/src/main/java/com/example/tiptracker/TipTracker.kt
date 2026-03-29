@@ -33,8 +33,8 @@ val appModule = module {
     viewModel { HomeViewModel(get(), get()) }
     viewModel { SettingsViewModel(get()) }
     viewModel { LogsViewModel(get()) }
-    viewModel { (logId: Int) -> LogDetailViewModel(logId = logId, logsRepository = get()) }
-    viewModel { (logId: Int) -> EditLogViewModel(logId = logId, logsRepository = get()) }
+    viewModel { (logId: Int) -> LogDetailViewModel(logId = logId, get()) }
+    viewModel { (logId: Int) -> EditLogViewModel(logId = logId, get()) }
     viewModel { ProfileViewModel(get()) }
 }
 

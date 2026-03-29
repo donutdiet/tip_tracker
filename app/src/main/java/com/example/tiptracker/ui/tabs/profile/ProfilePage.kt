@@ -435,6 +435,7 @@ fun ProfilePagePreview() {
                         total = 221.04,
                         partySize = 2,
                         restaurantName = "Saffron House",
+                        address = null,
                         review = "Tasting menu was excellent and service was top-tier.",
                         rating = 9.4,
                         date = "2026-02-14"
@@ -446,6 +447,7 @@ fun ProfilePagePreview() {
                         total = 54.40,
                         partySize = 3,
                         restaurantName = "Noodle Nook",
+                        address = null,
                         review = "Super friendly staff and quick service.",
                         rating = 8.8,
                         date = "2026-01-08"
@@ -457,6 +459,7 @@ fun ProfilePagePreview() {
                         total = 250.16,
                         partySize = 8,
                         restaurantName = "The Boardwalk Grill",
+                        address = null,
                         review = "Big group dinner after game night.",
                         rating = 7.9,
                         date = "2025-12-03"
@@ -468,6 +471,7 @@ fun ProfilePagePreview() {
                         total = 118.04,
                         partySize = 2,
                         restaurantName = "Juniper",
+                        address = null,
                         review = "Perfect date night spot.",
                         rating = 10.0,
                         date = "2026-03-02"
@@ -479,6 +483,7 @@ fun ProfilePagePreview() {
                         total = 69.38,
                         partySize = 2,
                         restaurantName = "Harbor Kitchen",
+                        address = null,
                         review = "Great seafood platter, crisp drinks, and a relaxed patio atmosphere. Would come back for sunset views and the crab cakes.",
                         rating = 8.7,
                         date = "2026-02-01"

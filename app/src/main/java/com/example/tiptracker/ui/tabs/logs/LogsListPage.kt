@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,7 +31,6 @@ import com.example.tiptracker.R
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.ui.theme.ScreenPadding
 import com.example.tiptracker.ui.theme.TipTrackerTheme
-import com.example.tiptracker.ui.theme.displayFontFamily
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
@@ -199,6 +196,7 @@ fun LogsListPagePreview() {
                         total = 152.02,
                         partySize = 2,
                         restaurantName = "The Pearl sd flsdkfj sdlkfj sldfkj sdlfksdj flksdj fdsl",
+                        address = null,
                         review = "goysters",
                         rating = 8.6,
                         date = "2023-07-09"
@@ -210,6 +208,7 @@ fun LogsListPagePreview() {
                         total = 54.60,
                         partySize = 1,
                         restaurantName = "Taco Bell",
+                        address = null,
                         review = "Fast",
                         rating = 5.0,
                         date = "2023-07-10"
