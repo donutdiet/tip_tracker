@@ -12,6 +12,7 @@ data class Log (
     @ColumnInfo(name = "total") val total: Double,
     @ColumnInfo(name = "party_size") val partySize: Int,
     @ColumnInfo(name = "restaurant_name") val restaurantName: String,
+    @ColumnInfo(name = "address") val address: String?,
     @ColumnInfo(name = "review") val review: String,
     @ColumnInfo(name = "rating") val rating: Double, // 0-10, 1 decimal
     @ColumnInfo(name = "date") val date: String // yyyy-mm-dd

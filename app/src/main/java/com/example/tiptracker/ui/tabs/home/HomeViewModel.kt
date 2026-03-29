@@ -122,7 +122,7 @@ sealed interface HomeEvent {
 }
 
 class HomeViewModel(
-    private val logRepository: LogRepository,
+    private val logsRepository: LogRepository,
     settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -225,11 +225,12 @@ class HomeViewModel(
                     total = state.total,
                     partySize = partySize,
                     restaurantName = state.restaurantName,
+                    address = null,
                     review = state.review,
                     rating = state.rating,
                     date = state.date
                 )
-                logRepository.insertLog(log)
+                logsRepository.insertLog(log)
                 clearState()
                 _events.send(HomeEvent.LogSaved)
             } catch (e: Exception) {

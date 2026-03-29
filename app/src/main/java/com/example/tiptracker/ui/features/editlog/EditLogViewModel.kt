@@ -157,6 +157,7 @@ class EditLogViewModel(
                         total = total,
                         partySize = partySize,
                         restaurantName = state.restaurantName,
+                        address = null,
                         review = state.review,
                         rating = state.rating,
                         date = state.date
