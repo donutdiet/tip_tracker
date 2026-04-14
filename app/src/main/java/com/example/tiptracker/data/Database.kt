@@ -6,6 +6,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.tiptracker.data.dao.LogDao
+import com.example.tiptracker.data.dao.LogImageDao
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.entity.LogImage
 
@@ -22,6 +23,7 @@ import com.example.tiptracker.data.entity.LogImage
 )
 abstract class TipTrackerDatabase : RoomDatabase() {
     abstract fun logDao(): LogDao
+    abstract fun logImageDao(): LogImageDao
 }
 
 object DatabaseProvider {

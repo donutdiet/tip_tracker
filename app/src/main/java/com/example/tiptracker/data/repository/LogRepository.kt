@@ -13,8 +13,9 @@ class LogRepository(
 
     fun getLogById(id: Int): Flow<Log?> = logDao.getLogById(id)
 
-    suspend fun insertLog(log: Log) {
-        logDao.insertLog(log)
+    suspend fun insertLog(log: Log): Int {
+        val savedLogId = logDao.insertLog(log)
+        return savedLogId.toInt()
     }
 
     suspend fun updateLog(log: Log) {

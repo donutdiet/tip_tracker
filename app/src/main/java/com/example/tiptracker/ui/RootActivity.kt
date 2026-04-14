@@ -56,6 +56,7 @@ fun RootActivity() {
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         tabEntries(
             openLogDetail = { navigator.openFullscreen(RootKey.LogDetail(it)) },
+            openLogSaved = { navigator.openFullscreen(RootKey.LogSaved(it))},
             snackbarHostState =  navigationState.snackBarHostState
         )
     }

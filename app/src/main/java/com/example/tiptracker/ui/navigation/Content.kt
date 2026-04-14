@@ -5,6 +5,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.example.tiptracker.ui.features.editlog.EditLogRoot
 import com.example.tiptracker.ui.features.logdetail.LogDetailRoot
+import com.example.tiptracker.ui.features.logsaved.LogSavedRoot
 import com.example.tiptracker.ui.features.settings.SettingsRoot
 import com.example.tiptracker.ui.tabs.home.HomeRoot
 import com.example.tiptracker.ui.tabs.logs.LogsRoot
@@ -12,6 +13,7 @@ import com.example.tiptracker.ui.tabs.profile.ProfileRoot
 
 fun EntryProviderScope<NavKey>.tabEntries(
     openLogDetail: (Int) -> Unit,
+    openLogSaved: (Int) -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     entry<TabKey.Logs> {
@@ -22,7 +24,8 @@ fun EntryProviderScope<NavKey>.tabEntries(
 
     entry<TabKey.Home> {
         HomeRoot(
-            snackbarHostState = snackbarHostState
+            snackbarHostState = snackbarHostState,
+            onLogSaved = openLogSaved
         )
     }
 
@@ -43,6 +46,12 @@ fun EntryProviderScope<NavKey>.rootEntries(
     entry<RootKey.Settings> {
         SettingsRoot(
             onBack = navigateBack
+        )
+    }
+
+    entry<RootKey.LogSaved> { key ->
+        LogSavedRoot(
+            logId = key.id
         )
     }
 

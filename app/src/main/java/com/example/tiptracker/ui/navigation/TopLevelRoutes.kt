@@ -9,6 +9,9 @@ import kotlinx.serialization.Serializable
 
     // Full screen pages
     @Serializable data object Settings : RootKey
+
+    @Serializable data class LogSaved(val id: Int) : RootKey
+
     @Serializable data class LogDetail(val id: Int) : RootKey
 
     @Serializable data class EditLog(val id: Int) : RootKey

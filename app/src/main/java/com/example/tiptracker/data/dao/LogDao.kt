@@ -18,7 +18,7 @@ interface LogDao {
     fun getLogById(id: Int): Flow<Log?>
 
     @Insert
-    suspend fun insertLog(log: Log)
+    suspend fun insertLog(log: Log): Long
 
     @Update
     suspend fun updateLog(log: Log)
