@@ -33,7 +33,7 @@ val appModule = module {
     single { ImageStorageHelper(androidContext()) }
 
     // Repository
-    single { LogRepository(get()) }
+    single { LogRepository(get(), get()) }
     single { SettingsRepository(get()) }
     single { LogImageRepository(get(), get()) }
 

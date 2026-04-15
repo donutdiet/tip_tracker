@@ -238,13 +238,8 @@ private fun fullScreenTransform(
 ) =
     // HACK: Super scuffed way to configure different transitions for screens
     if (fromKey?.startsWith("LogSaved") == true || toKey?.startsWith("LogSaved") == true) {
-        if (isPop) {
-            slideInVertically(initialOffsetY = { -it }) togetherWith
-                slideOutVertically(targetOffsetY = { it })
-        } else {
-            slideInVertically(initialOffsetY = { it }) togetherWith
-                slideOutVertically(targetOffsetY = { -it })
-        }
+        slideInVertically(initialOffsetY = { it }) togetherWith
+            slideOutVertically(targetOffsetY = { -it })
     } else if (isPop) {
         slideInHorizontally(initialOffsetX = { -it }) togetherWith
             slideOutHorizontally(targetOffsetX = { it })

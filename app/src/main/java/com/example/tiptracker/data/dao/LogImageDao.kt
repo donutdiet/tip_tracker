@@ -12,6 +12,9 @@ interface LogImageDao {
     @Query("SELECT * FROM log_image WHERE log_id = :logId ORDER BY `order` ASC")
     fun getAllImagesForLog(logId: Int): Flow<List<LogImage>>
 
+    @Query("SELECT * FROM log_image WHERE log_id = :logId ORDER BY `order` ASC")
+    suspend fun getAllImagesForLogOnce(logId: Int): List<LogImage>
+
     @Query("SELECT COUNT(*) FROM log_image WHERE log_id = :logId")
     suspend fun getImageCount(logId: Int): Int
 

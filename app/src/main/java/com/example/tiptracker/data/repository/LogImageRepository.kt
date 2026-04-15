@@ -17,25 +17,40 @@ class LogImageRepository(
     // Saves all picked URIs in one shot, respecting the limit.
     // Returns how many were actually saved (could be less than picked if near the limit).
     suspend fun addImages(logId: Int, uris: List<Uri>): Result<Int> {
+        if (uris.isEmpty()) return Result.success(0)
+
         val currentCount = dao.getImageCount(logId)
         val remaining = MAX_IMAGES_PER_LOG - currentCount
         if (remaining <= 0) return Result.failure(Exception("Image limit reached for this log (10)"))
 
         val urisToSave = uris.take(remaining)
-        val nextOrder = currentCount + 1
+        val nextOrder = currentCount
+        val savedFilePaths = mutableListOf<String>()
 
-        val images = urisToSave.mapIndexed { index, uri ->
-            val filePath = imageStorageHelper.saveImage(uri, logId)
-            LogImage(logId = logId, filePath = filePath, order = nextOrder + index)
+        return try {
+            val images = urisToSave.mapIndexed { index, uri ->
+                val filePath = imageStorageHelper.saveImage(uri, logId)
+                savedFilePaths += filePath
+                LogImage(logId = logId, filePath = filePath, order = nextOrder + index)
+            }
+
+            dao.insertAll(images)
+            Result.success(images.size)
+        } catch (e: Exception) {
+            savedFilePaths.forEach { filePath ->
+                imageStorageHelper.deleteImage(filePath)
+            }
+            Result.failure(e)
         }
-
-        dao.insertAll(images)
-        return Result.success(images.size)
     }
 
-    suspend fun deleteImage(imageId: Int, filePath: String) {
-        imageStorageHelper.deleteImage(filePath)
+    suspend fun deleteImage(logId: Int, imageId: Int, filePath: String) {
+        check(imageStorageHelper.deleteImage(filePath)) {
+            "Couldn't delete image file from app storage."
+        }
         dao.deleteImageById(imageId)
+        val remainingImages = dao.getAllImagesForLogOnce(logId)
+        reorderImages(remainingImages)
     }
 
     suspend fun reorderImages(images: List<LogImage>) {
