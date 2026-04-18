@@ -87,7 +87,8 @@ fun RootActivity() {
                     navigationState.snackBarHostState.showSnackbar("Log updated successfully!")
                 }
             },
-            openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) }
+            openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) },
+            pop = { navigator.goBack() }
         )
     }
 

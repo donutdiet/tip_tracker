@@ -33,7 +33,7 @@ data class LogSavedUiState(
 
 sealed interface LogSavedAction {
     data class AddImages(val uris: List<Uri>) : LogSavedAction
-    data class MoveImage(val fromIndex: Int, val toIndex: Int) : LogSavedAction
+    data class ReorderImages(val images: List<LogImage>) : LogSavedAction
     data class RemoveImage(val image: LogImage) : LogSavedAction
 }
 
@@ -73,7 +73,7 @@ class LogSavedViewModel(
     fun onAction(action: LogSavedAction) {
         when (action) {
             is LogSavedAction.AddImages -> addImages(action.uris)
-            is LogSavedAction.MoveImage -> moveImage(action.fromIndex, action.toIndex)
+            is LogSavedAction.ReorderImages -> reorderImages(action.images)
             is LogSavedAction.RemoveImage -> removeImage(action.image)
         }
     }
@@ -83,7 +83,7 @@ class LogSavedViewModel(
 
         viewModelScope.launch {
             if (!uiState.value.canAddMore) {
-                _events.send(
+                _events.trySend(
                     LogSavedEvent.ShowMessage(
                         "You can only attach up to ${uiState.value.maxImages} images."
                     )
@@ -93,26 +93,9 @@ class LogSavedViewModel(
 
             isAddingImages.value = true
             try {
-                val savedCount = repository.addImages(logId, uris).getOrThrow()
-                when {
-                    savedCount == 0 -> {
-                        _events.send(LogSavedEvent.ShowMessage("No images could be added."))
-                    }
-
-                    savedCount < uris.size -> {
-                        _events.send(
-                            LogSavedEvent.ShowMessage(
-                                "Added $savedCount image(s). Some were skipped because you hit the ${uiState.value.maxImages} image limit."
-                            )
-                        )
-                    }
-
-                    else -> {
-                        _events.send(LogSavedEvent.ShowMessage("Added $savedCount image(s)."))
-                    }
-                }
+                repository.addImages(logId, uris).getOrThrow()
             } catch (e: Exception) {
-                _events.send(LogSavedEvent.ShowMessage("Couldn't add images. Please try again."))
+                _events.trySend(LogSavedEvent.ShowMessage("Couldn't add images. Please try again."))
                 android.util.Log.e("LogSavedViewModel", "Error adding images for log $logId", e)
             } finally {
                 isAddingImages.value = false
@@ -120,21 +103,17 @@ class LogSavedViewModel(
         }
     }
 
-    private fun moveImage(fromIndex: Int, toIndex: Int) {
+    private fun reorderImages(images: List<LogImage>) {
         val currentImages = uiState.value.images
-        if (isUpdatingImageOrder.value || fromIndex == toIndex) return
-        if (fromIndex !in currentImages.indices || toIndex !in currentImages.indices) return
+        if (isUpdatingImageOrder.value || images.isEmpty()) return
+        if (images.map { it.id } == currentImages.map { it.id }) return
 
         viewModelScope.launch {
             isUpdatingImageOrder.value = true
             try {
-                val reorderedImages = currentImages.toMutableList().apply {
-                    val movedImage = removeAt(fromIndex)
-                    add(toIndex, movedImage)
-                }
-                repository.reorderImages(reorderedImages)
+                repository.reorderImages(images)
             } catch (e: Exception) {
-                _events.send(LogSavedEvent.ShowMessage("Couldn't reorder images. Please try again."))
+                _events.trySend(LogSavedEvent.ShowMessage("Couldn't reorder images. Please try again."))
                 android.util.Log.e("LogSavedViewModel", "Error reordering images for log $logId", e)
             } finally {
                 isUpdatingImageOrder.value = false
@@ -149,9 +128,9 @@ class LogSavedViewModel(
             isDeletingImage.value = true
             try {
                 repository.deleteImage(logId, image.id, image.filePath)
-                _events.send(LogSavedEvent.ShowMessage("Image removed."))
+                _events.trySend(LogSavedEvent.ShowMessage("Image removed."))
             } catch (e: Exception) {
-                _events.send(LogSavedEvent.ShowMessage("Couldn't remove image. Please try again."))
+                _events.trySend(LogSavedEvent.ShowMessage("Couldn't remove image. Please try again."))
                 android.util.Log.e("LogSavedViewModel", "Error deleting image ${image.id}", e)
             } finally {
                 isDeletingImage.value = false

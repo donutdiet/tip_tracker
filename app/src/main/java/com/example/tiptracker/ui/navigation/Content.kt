@@ -41,6 +41,7 @@ fun EntryProviderScope<NavKey>.rootEntries(
     onLogDeleted: () -> Unit,
     onLogUpdated: () -> Unit,
     openEditPage: (Int) -> Unit,
+    pop: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     entry<RootKey.Settings> {
@@ -51,7 +52,9 @@ fun EntryProviderScope<NavKey>.rootEntries(
 
     entry<RootKey.LogSaved> { key ->
         LogSavedRoot(
-            logId = key.id
+            logId = key.id,
+            snackbarHostState = snackbarHostState,
+            onDone = pop
         )
     }
 
