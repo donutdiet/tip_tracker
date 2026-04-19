@@ -23,8 +23,11 @@ import ir.ehsannarmani.compose_charts.models.IndicatorCount
 import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.LabelProperties
 import ir.ehsannarmani.compose_charts.models.PopupProperties
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
+
+private const val MAX_Y_AXIS_LABEL_COUNT = 8
 
 @Composable
 fun RatingDistributionGraph(distribution: List<RatingCount>) {
@@ -65,6 +68,12 @@ fun RatingDistributionGraph(distribution: List<RatingCount>) {
 
     val maxCount = remember(data) {
         data.maxOfOrNull { bar -> bar.values.maxOfOrNull { it.value } ?: 0.0 } ?: 0.0
+    }
+    val yAxisStep = remember(maxCount) {
+        calculateYAxisStep(maxCount = maxCount)
+    }
+    val chartMaxValue = remember(maxCount, yAxisStep) {
+        roundUpToStep(value = maxCount.coerceAtLeast(1.0), step = yAxisStep)
     }
 
     ColumnChart(
@@ -107,17 +116,20 @@ fun RatingDistributionGraph(distribution: List<RatingCount>) {
         gridProperties = GridProperties(
             enabled = false
         ),
-        maxValue = maxCount.coerceAtLeast(1.0),
+        maxValue = chartMaxValue,
         minValue = 0.0,
         indicatorProperties = HorizontalIndicatorProperties(
-            count = IndicatorCount.StepBased(stepBy = 1.0),
+            count = IndicatorCount.StepBased(stepBy = yAxisStep),
             textStyle = axisTextStyle,
             contentBuilder = { value -> value.roundToInt().toString() }
         ),
         popupProperties = PopupProperties(
             textStyle = popupTextStyle,
             containerColor = popupContainer,
-            contentBuilder = { popup -> popup.value.roundToInt().toString() }
+            contentBuilder = { popup ->
+                val count = popup.value.roundToInt()
+                "${popup.dataIndex.toRatingBucketLabel()}: $count ${count.asLogLabel()}"
+            }
         ),
         animationMode = AnimationMode.Together { 0L }
     )
@@ -125,4 +137,27 @@ fun RatingDistributionGraph(distribution: List<RatingCount>) {
 
 private fun Double.toHalfBucketIndex(): Int {
     return floor(this * 2).toInt().coerceIn(0, 20)
+}
+
+private fun calculateYAxisStep(
+    maxCount: Double,
+    maxLabelCount: Int = MAX_Y_AXIS_LABEL_COUNT
+): Double {
+    val maxWholeCount = maxCount.roundToInt().coerceAtLeast(1)
+    val intervalCount = (maxLabelCount - 1).coerceAtLeast(1)
+    return ceil(maxWholeCount.toDouble() / intervalCount).coerceAtLeast(1.0)
+}
+
+private fun roundUpToStep(value: Double, step: Double): Double {
+    return ceil(value / step) * step
+}
+
+private fun Int.toRatingBucketLabel(): String {
+    val lowerBound = this / 2.0
+    val upperBound = (this + 1) / 2.0
+    return "%.1f-%.1f".format(lowerBound, upperBound)
+}
+
+private fun Int.asLogLabel(): String {
+    return if (this == 1) "log" else "logs"
 }
