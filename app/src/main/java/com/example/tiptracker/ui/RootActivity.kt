@@ -88,6 +88,7 @@ fun RootActivity() {
                 }
             },
             openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) },
+            openImageManager = { navigator.openFullscreen(RootKey.LogImageManager(it)) },
             pop = { navigator.goBack() }
         )
     }

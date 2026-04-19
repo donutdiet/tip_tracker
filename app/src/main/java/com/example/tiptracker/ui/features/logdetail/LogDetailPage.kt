@@ -19,9 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,13 +43,16 @@ import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.formatDateForDisplay
+import kotlinx.coroutines.delay
 import java.io.File
 
 @Composable
 fun LogDetailPage(
     uiState: LogDetailUiState,
     imageFiles: List<File?>,
+    onManageImagesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedImageIndex by remember { mutableStateOf<Int?>(null) }
@@ -86,33 +91,41 @@ fun LogDetailPage(
                 }
             }
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = formatDateForDisplay(uiState.date),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Text(
-                    text = "·",
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(start = 6.dp, end = 4.dp)
-                )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.person),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                    Text(
+                        text = formatDateForDisplay(uiState.date),
+                        style = MaterialTheme.typography.labelLarge
                     )
                     Text(
-                        text = uiState.partySize.toString(),
-                        style = MaterialTheme.typography.titleMedium
+                        text = "·",
+                        fontSize = 24.sp,
+                        modifier = Modifier.padding(start = 6.dp, end = 4.dp)
                     )
-                }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.person),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = uiState.partySize.toString(),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
 
+                }
+                Text(
+                    text = "$${uiState.total}",
+                    style = MaterialTheme.typography.titleMediumMono
+                )
             }
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -166,34 +179,57 @@ private fun LogDetailImageGallery(
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(pageCount = { imageFiles.size })
+    val showImageCount = imageFiles.size > 1
+    var isImageCountVisible by remember(showImageCount) { mutableStateOf(showImageCount) }
+
+    LaunchedEffect(pagerState.currentPage, showImageCount) {
+        if (!showImageCount) {
+            isImageCountVisible = false
+            return@LaunchedEffect
+        }
+
+        isImageCountVisible = true
+        delay(2500)
+        isImageCountVisible = false
+    }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                text = "${pagerState.currentPage + 1} / ${imageFiles.size}",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+            HorizontalPager(
+                state = pagerState,
+                pageSpacing = 12.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(4f / 3f)
+            ) { page ->
+                LogDetailImageCard(
+                    imageFile = imageFiles[page],
+                    onClick = { onImageClick(page) }
+                )
+            }
 
-        HorizontalPager(
-            state = pagerState,
-            pageSpacing = 12.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(4f / 3f)
-        ) { page ->
-            LogDetailImageCard(
-                imageFile = imageFiles[page],
-                onClick = { onImageClick(page) }
-            )
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isImageCountVisible,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+            ) {
+                Surface(
+                    color = Color.Black.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        text = "${pagerState.currentPage + 1} / ${imageFiles.size}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -357,7 +393,8 @@ fun LogDetailPagePreview() {
                 errorMessage = null,
                 isDeleting = false
             ),
-            imageFiles = listOf(null, null, null)
+            imageFiles = listOf(null, null, null),
+            onManageImagesClick = {}
         )
     }
 }

@@ -5,6 +5,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,6 +37,7 @@ fun LogDetailRoot(
     logId: Int,
     onBack: () -> Unit,
     onEdit: (Int) -> Unit,
+    onManageImages: (Int) -> Unit,
     onLogDeleted: () -> Unit,
     snackbarHostState: SnackbarHostState,
     viewModel: LogDetailViewModel = koinViewModel(parameters = { parametersOf(logId) })
@@ -94,11 +98,32 @@ fun LogDetailRoot(
                     }
                 }
             )
+        },
+        bottomBar = {
+            BottomAppBar(
+                actions = {},
+                floatingActionButton = {
+                    if (!uiState.isLoading && !uiState.isNotFound && uiState.errorMessage == null) {
+                        FloatingActionButton(
+                            onClick = { onManageImages(logId) },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.image),
+                                contentDescription = "Manage images"
+                            )
+                        }
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.background
+            )
         }
     ) { innerPadding ->
         LogDetailPage(
             uiState = uiState,
             imageFiles = imageFiles,
+            onManageImagesClick = { onManageImages(logId) },
             modifier = Modifier.padding(innerPadding)
         )
     }
