@@ -1,9 +1,9 @@
 package com.example.tiptracker.ui.features.logdetail
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,24 +28,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.theme.TipTrackerTheme
-import com.example.tiptracker.ui.theme.titleMediumMono
-import com.example.tiptracker.ui.theme.titleSmallMono
-import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
-import com.example.tiptracker.utils.formatTipPercent
+import java.io.File
 
 @Composable
 fun LogDetailPage(
     uiState: LogDetailUiState,
+    imageFiles: List<File?>,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var selectedImageIndex by remember { mutableStateOf<Int?>(null) }
     val scrollState = rememberScrollState()
 
     Column(
@@ -109,6 +116,14 @@ fun LogDetailPage(
             }
             Spacer(modifier = Modifier.height(20.dp))
 
+            if (imageFiles.isNotEmpty()) {
+                LogDetailImageGallery(
+                    imageFiles = imageFiles,
+                    onImageClick = { index -> selectedImageIndex = index }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -133,116 +148,189 @@ fun LogDetailPage(
             }
             Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
         }
+    }
 
-        Spacer(modifier = Modifier.height(12.dp))
+    selectedImageIndex?.let { initialPage ->
+        FullScreenImageDialog(
+            imageFiles = imageFiles,
+            initialPage = initialPage,
+            onDismiss = { selectedImageIndex = null }
+        )
+    }
+}
 
-        Surface(
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.clickable(
-                onClick = { expanded = !expanded }
-            )
+@Composable
+private fun LogDetailImageGallery(
+    imageFiles: List<File?>,
+    onImageClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val pagerState = rememberPagerState(pageCount = { imageFiles.size })
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+            Text(
+                text = "${pagerState.currentPage + 1} / ${imageFiles.size}",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            pageSpacing = 12.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(4f / 3f)
+        ) { page ->
+            LogDetailImageCard(
+                imageFile = imageFiles[page],
+                onClick = { onImageClick(page) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun LogDetailImageCard(
+    imageFile: File?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceDim)
+    ) {
+        if (imageFile == null) {
+            Text(
+                text = "No image",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp)
+            )
+        } else {
+            SubcomposeAsyncImage(
+                model = imageFile,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(onClick = onClick),
+                loading = {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                },
+                error = {
+                    Text(
+                        text = "Image unavailable",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FullScreenImageDialog(
+    imageFiles: List<File?>,
+    initialPage: Int,
+    onDismiss: () -> Unit
+) {
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { imageFiles.size }
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.88f))
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 72.dp)
+            ) { page ->
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Text(text = "Bill", style = MaterialTheme.typography.titleMediumMono)
-                    Text(
-                        text = "$${formatCurrency(uiState.bill)}",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Tip",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                    Text(
-                        text = "$${formatCurrency(uiState.tipAmount)}",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-                HorizontalDivider(
-                    modifier = Modifier.padding(bottom = 2.dp),
-                    thickness = 2.dp,
-                    color = MaterialTheme.colorScheme.outline
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Total",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                    Text(
-                        text = "$${formatCurrency(uiState.total)}",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-
-                if (!expanded) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        Text("Show more", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                if (expanded) Spacer(modifier = Modifier.height(12.dp))
-
-                AnimatedVisibility(visible = expanded) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Total per person", style = MaterialTheme.typography.titleSmallMono)
-                            Text(
-                                text = "$${formatCurrency(uiState.totalPerPerson)}",
-                                style = MaterialTheme.typography.titleSmallMono
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Tip Percent", style = MaterialTheme.typography.titleSmallMono)
-                            Text(
-                                text = "${formatTipPercent(uiState.tipPercent)}%",
-                                style = MaterialTheme.typography.titleSmallMono
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            Text("Show less", style = MaterialTheme.typography.bodySmall)
-                        }
+                    val imageFile = imageFiles[page]
+                    if (imageFile == null) {
+                        Text(
+                            text = "Preview image",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        SubcomposeAsyncImage(
+                            model = imageFile,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                            loading = {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            },
+                            error = {
+                                Text(
+                                    text = "Image unavailable",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        )
                     }
                 }
             }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .align(Alignment.TopCenter)
+            ) {
+                Text(
+                    text = "${pagerState.currentPage + 1} / ${imageFiles.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        text = "Close",
+                        color = Color.White
+                    )
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -263,11 +351,13 @@ fun LogDetailPagePreview() {
                 date = "2026-03-21",
                 tipAmount = 25.62,
                 totalPerPerson = 76.87,
+                images = listOf(),
                 isLoading = false,
                 isNotFound = false,
                 errorMessage = null,
                 isDeleting = false
-            )
+            ),
+            imageFiles = listOf(null, null, null)
         )
     }
 }

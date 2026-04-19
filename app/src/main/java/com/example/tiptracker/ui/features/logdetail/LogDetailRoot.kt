@@ -19,9 +19,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tiptracker.R
+import com.example.tiptracker.data.helper.ImageStorageHelper
 import com.example.tiptracker.utils.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -36,7 +38,13 @@ fun LogDetailRoot(
     snackbarHostState: SnackbarHostState,
     viewModel: LogDetailViewModel = koinViewModel(parameters = { parametersOf(logId) })
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val imageFiles = remember(uiState.images, context) {
+        uiState.images.map { image ->
+            ImageStorageHelper.resolveStoredImageFile(context.filesDir, image.filePath)
+        }
+    }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     ObserveAsEvents(viewModel.events) { event ->
@@ -90,6 +98,7 @@ fun LogDetailRoot(
     ) { innerPadding ->
         LogDetailPage(
             uiState = uiState,
+            imageFiles = imageFiles,
             modifier = Modifier.padding(innerPadding)
         )
     }
