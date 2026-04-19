@@ -123,7 +123,6 @@ fun LogDetailRoot(
         LogDetailPage(
             uiState = uiState,
             imageFiles = imageFiles,
-            onManageImagesClick = { onManageImages(logId) },
             modifier = Modifier.padding(innerPadding)
         )
     }

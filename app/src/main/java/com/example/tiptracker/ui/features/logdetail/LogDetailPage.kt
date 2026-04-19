@@ -52,7 +52,6 @@ import java.io.File
 fun LogDetailPage(
     uiState: LogDetailUiState,
     imageFiles: List<File?>,
-    onManageImagesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedImageIndex by remember { mutableStateOf<Int?>(null) }
@@ -73,7 +72,7 @@ fun LogDetailPage(
                 text = uiState.restaurantName,
                 style = MaterialTheme.typography.headlineMedium
             )
-            uiState.address?.let { it ->
+            uiState.address?.let {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -393,8 +392,7 @@ fun LogDetailPagePreview() {
                 errorMessage = null,
                 isDeleting = false
             ),
-            imageFiles = listOf(null, null, null),
-            onManageImagesClick = {}
+            imageFiles = listOf(null, null, null)
         )
     }
 }

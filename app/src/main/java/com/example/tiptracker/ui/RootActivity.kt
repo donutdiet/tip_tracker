@@ -1,6 +1,5 @@
 package com.example.tiptracker.ui
 
-import android.util.Log
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInHorizontally
