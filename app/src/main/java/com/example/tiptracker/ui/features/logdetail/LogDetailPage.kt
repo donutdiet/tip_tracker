@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -75,57 +76,54 @@ fun LogDetailPage(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp, 4.dp)
+            .verticalScroll(scrollState)
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-        ) {
-            LogStatsCard(
-                billAmount = uiState.bill,
-                tipAmount = uiState.tipAmount,
-                total = uiState.total,
-                date = uiState.date,
-                partySize = uiState.partySize,
-                totalPerPerson = uiState.totalPerPerson,
-                tipPercent = uiState.tipPercent,
-                address = uiState.address
+        LogStatsCard(
+            billAmount = uiState.bill,
+            tipAmount = uiState.tipAmount,
+            total = uiState.total,
+            date = uiState.date,
+            partySize = uiState.partySize,
+            totalPerPerson = uiState.totalPerPerson,
+            tipPercent = uiState.tipPercent,
+            address = uiState.address
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (imageFiles.isNotEmpty()) {
+            LogDetailImageGallery(
+                imageFiles = imageFiles,
+                onImageClick = { index -> selectedImageIndex = index }
             )
             Spacer(modifier = Modifier.height(20.dp))
+        }
 
-            if (imageFiles.isNotEmpty()) {
-                LogDetailImageGallery(
-                    imageFiles = imageFiles,
-                    onImageClick = { index -> selectedImageIndex = index }
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-            }
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Review", style = MaterialTheme.typography.bodyLarge)
 
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Review", style = MaterialTheme.typography.bodyLarge)
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.star),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = uiState.rating.toString(),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
+                Icon(
+                    painter = painterResource(R.drawable.star),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = uiState.rating.toString(),
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
-            Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
         }
+        Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
+//        Spacer(modifier = Modifier.height(20.dp))
+
+
     }
 
     selectedImageIndex?.let { initialPage ->
@@ -160,20 +158,21 @@ private fun LogStatsCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = formatDateForDisplay(date), style = MaterialTheme.typography.titleSmallMono)
+                Text(
+                    text = formatDateForDisplay(date),
+                    style = MaterialTheme.typography.titleSmallMono
+                )
 
                 Row {
                     Icon(
                         painter = painterResource(R.drawable.person),
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .alignBy { it.measuredHeight }
+                        modifier = Modifier.size(20.dp)
                     )
                     Text(
                         text = "$partySize",
                         style = MaterialTheme.typography.titleSmallMono,
-                        modifier = Modifier.alignBy { it.measuredHeight }
+                        modifier = Modifier.offset(y = 1.dp)
                     )
                 }
             }
