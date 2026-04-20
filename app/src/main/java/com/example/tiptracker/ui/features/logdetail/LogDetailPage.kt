@@ -1,5 +1,6 @@
 package com.example.tiptracker.ui.features.logdetail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -30,10 +32,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,7 +55,10 @@ import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
+import com.example.tiptracker.ui.theme.titleSmallMono
+import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
+import com.example.tiptracker.utils.formatTipPercent
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -68,64 +82,16 @@ fun LogDetailPage(
                 .fillMaxWidth()
                 .verticalScroll(scrollState)
         ) {
-            Text(
-                text = uiState.restaurantName,
-                style = MaterialTheme.typography.headlineMedium
+            LogStatsCard(
+                billAmount = uiState.bill,
+                tipAmount = uiState.tipAmount,
+                total = uiState.total,
+                date = uiState.date,
+                partySize = uiState.partySize,
+                totalPerPerson = uiState.totalPerPerson,
+                tipPercent = uiState.tipPercent,
+                address = uiState.address
             )
-            uiState.address?.let {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.location),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = formatDateForDisplay(uiState.date),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                    Text(
-                        text = "·",
-                        fontSize = 24.sp,
-                        modifier = Modifier.padding(start = 6.dp, end = 4.dp)
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.person),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = uiState.partySize.toString(),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-
-                }
-                Text(
-                    text = "$${uiState.total}",
-                    style = MaterialTheme.typography.titleMediumMono
-                )
-            }
             Spacer(modifier = Modifier.height(20.dp))
 
             if (imageFiles.isNotEmpty()) {
@@ -172,6 +138,147 @@ fun LogDetailPage(
 }
 
 @Composable
+private fun LogStatsCard(
+    billAmount: Double,
+    tipAmount: Double,
+    total: Double,
+    date: String,
+    partySize: Int,
+    totalPerPerson: Double,
+    tipPercent: Double,
+    address: String? = null
+) {
+    Card(
+        shape = RoundedCornerShape(4.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = formatDateForDisplay(date), style = MaterialTheme.typography.titleSmallMono)
+
+                Row {
+                    Icon(
+                        painter = painterResource(R.drawable.person),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .alignBy { it.measuredHeight }
+                    )
+                    Text(
+                        text = "$partySize",
+                        style = MaterialTheme.typography.titleSmallMono,
+                        modifier = Modifier.alignBy { it.measuredHeight }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Bill", style = MaterialTheme.typography.titleMediumMono)
+                Text(
+                    text = "$${formatCurrency(billAmount)}",
+                    style = MaterialTheme.typography.titleMediumMono
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Tip", style = MaterialTheme.typography.titleMediumMono)
+                Text(
+                    text = "$${formatCurrency(tipAmount)}",
+                    style = MaterialTheme.typography.titleMediumMono
+                )
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(bottom = 2.dp),
+                thickness = 2.dp,
+                color = MaterialTheme.colorScheme.outline
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
+                Text(
+                    text = "$${formatCurrency(total)}",
+                    style = MaterialTheme.typography.titleMediumMono
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Total per person", style = MaterialTheme.typography.titleSmallMono)
+                Text(
+                    text = "$${formatCurrency(totalPerPerson)}",
+                    style = MaterialTheme.typography.titleSmallMono
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Tip percent", style = MaterialTheme.typography.titleSmallMono)
+                Text(
+                    text = "${formatTipPercent(tipPercent)}%",
+                    style = MaterialTheme.typography.titleSmallMono
+                )
+            }
+
+            address?.let {
+                Spacer(modifier = Modifier.height(12.dp))
+                val inlineContent = mapOf(
+                    "locationIcon" to InlineTextContent(
+                        Placeholder(
+                            width = 18.sp,
+                            height = 18.sp,
+                            placeholderVerticalAlign = PlaceholderVerticalAlign.Center
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.location),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                )
+                Text(
+                    text = buildAnnotatedString {
+                        appendInlineContent("locationIcon", "[location]")
+                        append(" ")
+                        append(it)
+                    },
+                    inlineContent = inlineContent,
+                    style = MaterialTheme.typography.titleSmallMono,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun LogDetailImageGallery(
     imageFiles: List<File?>,
     onImageClick: (Int) -> Unit,
@@ -188,7 +295,7 @@ private fun LogDetailImageGallery(
         }
 
         isImageCountVisible = true
-        delay(2500)
+        delay(3500)
         isImageCountVisible = false
     }
 
@@ -212,6 +319,7 @@ private fun LogDetailImageGallery(
                 )
             }
 
+            // HACK: figure out why I can't just import normally
             androidx.compose.animation.AnimatedVisibility(
                 visible = isImageCountVisible,
                 modifier = Modifier
@@ -219,7 +327,8 @@ private fun LogDetailImageGallery(
                     .padding(12.dp)
             ) {
                 Surface(
-                    color = Color.Black.copy(alpha = 0.6f)
+                    color = Color.Black.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
                         text = "${pagerState.currentPage + 1} / ${imageFiles.size}",
@@ -243,6 +352,7 @@ private fun LogDetailImageCard(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxSize()
+            .clip(RoundedCornerShape(4.dp))
             .background(MaterialTheme.colorScheme.surfaceDim)
     ) {
         if (imageFile == null) {
