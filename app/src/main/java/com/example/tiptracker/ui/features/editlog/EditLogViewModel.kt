@@ -28,7 +28,25 @@ data class EditLogUiState(
     val errorMessage: String? = null,
     val isUpdating: Boolean = false,
     val editsMade: Boolean = false
-)
+) {
+    val tipPercent: Double
+        get() {
+            val billAmount = bill.toDoubleOrNull() ?: 0.0
+            val tipAmountDouble = tipAmount.toDoubleOrNull() ?: 0.0
+            return if (billAmount != 0.0) {
+                ((tipAmountDouble / billAmount) * 100.0).roundToTwoDecimals()
+            } else {
+                0.0
+            }
+        }
+
+    val total: Double
+        get() {
+            val billAmount = bill.toDoubleOrNull() ?: 0.0
+            val tipAmountDouble = tipAmount.toDoubleOrNull() ?: 0.0
+            return (billAmount + tipAmountDouble).roundToTwoDecimals()
+        }
+}
 
 sealed interface EditLogAction {
     data class BillChanged(val bill: String) : EditLogAction
@@ -147,19 +165,12 @@ class EditLogViewModel(
                     return@launch
                 }
 
-                val total = (bill + tipAmount).roundToTwoDecimals()
-                val tipPercent = if (bill != 0.0) {
-                    ((tipAmount / bill) * 100.0).roundToTwoDecimals()
-                } else {
-                    0.0
-                }
-
                 logsRepository.updateLog(
                     Log(
                         id = logId,
                         bill = bill,
-                        tipPercent = tipPercent,
-                        total = total,
+                        tipPercent = state.tipPercent,
+                        total = state.total,
                         partySize = partySize,
                         restaurantName = state.restaurantName,
                         address = address,
@@ -184,6 +195,7 @@ class EditLogViewModel(
                 state.tipAmount != initial.tipAmount ||
                 state.partySize != initial.partySize ||
                 state.restaurantName != initial.restaurantName ||
+                state.address != initial.address ||
                 state.review != initial.review ||
                 state.date != initial.date ||
                 state.rating != initial.rating

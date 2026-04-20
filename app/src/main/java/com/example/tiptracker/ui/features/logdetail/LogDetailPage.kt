@@ -75,7 +75,7 @@ fun LogDetailPage(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp, 4.dp)
+            .padding(horizontal = 16.dp)
             .verticalScroll(scrollState)
     ) {
         LogStatsCard(
@@ -215,7 +215,8 @@ private fun LogStatsCard(
                 Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
                 Text(
                     text = "$${formatCurrency(total)}",
-                    style = MaterialTheme.typography.titleMediumMono
+                    style = MaterialTheme.typography.titleMediumMono,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))

@@ -45,9 +45,11 @@ import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.components.CustomThumb
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.convertDateToMillis
 import com.example.tiptracker.utils.convertMillisToDate
 import com.example.tiptracker.utils.formatDateForDisplay
+import com.example.tiptracker.utils.formatTipPercent
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,6 +141,26 @@ fun EditLogPage(
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
+
+        Column {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Tip Percent", style = MaterialTheme.typography.titleMediumMono)
+                Text(text = "${formatTipPercent(uiState.tipPercent)}%", style = MaterialTheme.typography.titleMediumMono)
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
+                Text(text = "$${uiState.total}", style = MaterialTheme.typography.titleMediumMono)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         OutlinedTextField(
             value = uiState.partySize,
