@@ -24,4 +24,8 @@ A native android app I built to help me keep track of all my restaurant visits.
 - Koin
 - Navigation 3
 - Material 3
-- [Vico](https://guide.vico.patrykandpatrick.com/)
+
+### Libraries
+- [Vico](https://guide.vico.patrykandpatrick.com/) for graphs
+- [Coil](https://coil-kt.github.io/coil/) for image loading
+- [Reorderable](https://github.com/Calvin-LL/Reorderable) for drag and drop lists
