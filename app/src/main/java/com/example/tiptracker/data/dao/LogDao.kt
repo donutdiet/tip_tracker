@@ -1,9 +1,7 @@
 package com.example.tiptracker.data.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.tiptracker.data.entity.Log
@@ -20,7 +18,7 @@ interface LogDao {
     fun getLogById(id: Int): Flow<Log?>
 
     @Insert
-    suspend fun insertLog(log: Log)
+    suspend fun insertLog(log: Log): Long
 
     @Update
     suspend fun updateLog(log: Log)

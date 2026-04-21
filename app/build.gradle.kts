@@ -22,10 +22,10 @@ extensions.configure<ApplicationExtension> {
 
     defaultConfig {
         applicationId = "com.jerrywang.tiptracker"
-        minSdk = 26
+        minSdk = 28
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.2.2"
+        versionCode = 14
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -82,6 +82,8 @@ dependencies {
 
     // Graph
     implementation (libs.compose.charts)
+    implementation(libs.reorderable)
+    implementation(libs.coil.compose)
 
     // UI Tests
     androidTestImplementation(libs.androidx.ui.test.junit4)

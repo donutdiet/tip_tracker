@@ -3,7 +3,9 @@ package com.example.tiptracker.ui
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,6 +58,7 @@ fun RootActivity() {
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         tabEntries(
             openLogDetail = { navigator.openFullscreen(RootKey.LogDetail(it)) },
+            openLogSaved = { navigator.openFullscreen(RootKey.LogSaved(it))},
             snackbarHostState =  navigationState.snackBarHostState
         )
     }
@@ -83,7 +86,9 @@ fun RootActivity() {
                     navigationState.snackBarHostState.showSnackbar("Log updated successfully!")
                 }
             },
-            openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) }
+            openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) },
+            openImageManager = { navigator.openFullscreen(RootKey.LogImageManager(it)) },
+            pop = { navigator.goBack() }
         )
     }
 
@@ -99,9 +104,27 @@ fun RootActivity() {
     NavDisplay(
         entries = rootEntries,
         onBack = { navigator.goBack() },
-        transitionSpec = { fullScreenTransform(isPop = false) },
-        popTransitionSpec = { fullScreenTransform(isPop = true) },
-        predictivePopTransitionSpec = { _ -> fullScreenTransform(isPop = true) },
+        transitionSpec = {
+            fullScreenTransform(
+                isPop = false,
+                fromKey = initialState.topRootContentKey(),
+                toKey = targetState.topRootContentKey()
+            )
+        },
+        popTransitionSpec = {
+            fullScreenTransform(
+                isPop = true,
+                fromKey = initialState.topRootContentKey(),
+                toKey = targetState.topRootContentKey()
+            )
+        },
+        predictivePopTransitionSpec = { _ ->
+            fullScreenTransform(
+                isPop = true,
+                fromKey = initialState.topRootContentKey(),
+                toKey = targetState.topRootContentKey()
+            )
+        },
     )
 }
 
@@ -194,6 +217,9 @@ private fun Scene<NavKey>.topLevelPosition(positionByContentKey: Map<String, Int
         positionByContentKey[entry.contentKey.toString()]
     }
 
+private fun Scene<NavKey>.topRootContentKey(): String? =
+    entries.asReversed().firstOrNull()?.contentKey?.toString()
+
 private fun horizontalTabTransform(fromPosition: Int?, toPosition: Int?) =
     when {
         fromPosition == null || toPosition == null || fromPosition == toPosition ->
@@ -206,8 +232,16 @@ private fun horizontalTabTransform(fromPosition: Int?, toPosition: Int?) =
                 slideOutHorizontally(targetOffsetX = { it })
     }
 
-private fun fullScreenTransform(isPop: Boolean) =
-    if (isPop) {
+private fun fullScreenTransform(
+    isPop: Boolean,
+    fromKey: String?,
+    toKey: String?
+) =
+    // HACK: Super scuffed way to configure different transitions for screens
+    if (fromKey?.startsWith("LogSaved") == true || toKey?.startsWith("LogSaved") == true) {
+        slideInVertically(initialOffsetY = { it }) togetherWith
+            slideOutVertically(targetOffsetY = { -it })
+    } else if (isPop) {
         slideInHorizontally(initialOffsetX = { -it }) togetherWith
             slideOutHorizontally(targetOffsetX = { it })
     } else {

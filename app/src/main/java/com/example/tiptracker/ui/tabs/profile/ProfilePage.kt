@@ -1,10 +1,8 @@
 package com.example.tiptracker.ui.tabs.profile
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -24,14 +23,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -51,7 +44,6 @@ import com.example.tiptracker.ui.theme.titleSmallMono
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.formatTipPercent
-import kotlinx.coroutines.delay
 
 @Composable
 fun ProfilePage(
@@ -89,15 +81,7 @@ fun ProfilePageContent(
     uiState: ProfileUiState,
     onLogItemClick: (Int) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
-    LaunchedEffect(expanded) {
-        if (expanded) {
-            // Ensure expanded receipt content is brought fully into view.
-            delay(125)
-            scrollState.animateScrollTo(scrollState.maxValue)
-        }
-    }
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -106,6 +90,117 @@ fun ProfilePageContent(
             .verticalScroll(scrollState)
             .padding(paddingValues = ScreenPadding)
     ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Average Receipt",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+            Text(
+                text = "${uiState.logStats.totalLogs} logs",
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+        Card(
+            shape = RoundedCornerShape(4.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Bill", style = MaterialTheme.typography.titleMediumMono)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgBill)}",
+                        style = MaterialTheme.typography.titleMediumMono
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Tip", style = MaterialTheme.typography.titleMediumMono)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgTipAmount)}",
+                        style = MaterialTheme.typography.titleMediumMono
+                    )
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(bottom = 2.dp),
+                    thickness = 2.dp,
+                    color = MaterialTheme.colorScheme.outline
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgTotal)}",
+                        style = MaterialTheme.typography.titleMediumMono
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Total per person", style = MaterialTheme.typography.titleSmallMono)
+                    Text(
+                        text = "$${formatCurrency(uiState.logStats.avgTotalPerPerson)}",
+                        style = MaterialTheme.typography.titleSmallMono
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Tip percent", style = MaterialTheme.typography.titleSmallMono)
+                    Text(
+                        text = "${formatTipPercent(uiState.logStats.avgTipPercent)}%",
+                        style = MaterialTheme.typography.titleSmallMono
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Party size", style = MaterialTheme.typography.titleSmallMono)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = painterResource(R.drawable.person),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "${uiState.logStats.avgPartySize}",
+                            style = MaterialTheme.typography.titleSmallMono,
+                            modifier = Modifier.offset(y = 1.dp)
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -160,144 +255,9 @@ fun ProfilePageContent(
                 metricIcon = award.iconRes
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Average Receipt",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Text(
-                text = "${uiState.logStats.totalLogs} logs",
-                style = MaterialTheme.typography.labelLarge
-            )
-        }
-
-        Surface(
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.clickable(
-                onClick = { expanded = !expanded }
-            )
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Bill", style = MaterialTheme.typography.titleMediumMono)
-                    Text(
-                        text = "$${formatCurrency(uiState.logStats.avgBill)}",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Tip", style = MaterialTheme.typography.titleMediumMono)
-                    Text(
-                        text = "$${formatCurrency(uiState.logStats.avgTipAmount)}",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-                HorizontalDivider(
-                    modifier = Modifier.padding(bottom = 2.dp),
-                    thickness = 2.dp,
-                    color = MaterialTheme.colorScheme.outline
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
-                    Text(
-                        text = "$${formatCurrency(uiState.logStats.avgTotal)}",
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-
-                if (!expanded) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        Text("Show more", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                if (expanded) Spacer(modifier = Modifier.height(12.dp))
-
-                AnimatedVisibility(visible = expanded) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Total per person", style = MaterialTheme.typography.titleSmallMono)
-                            Text(
-                                text = "$${formatCurrency(uiState.logStats.avgTotalPerPerson)}",
-                                style = MaterialTheme.typography.titleSmallMono
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Tip percent", style = MaterialTheme.typography.titleSmallMono)
-                            Text(
-                                text = "${formatTipPercent(uiState.logStats.avgTipPercent)}%",
-                                style = MaterialTheme.typography.titleSmallMono
-                            )
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = "Party size", style = MaterialTheme.typography.titleSmallMono)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(R.drawable.person),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Text(
-                                    text = "${uiState.logStats.avgPartySize}",
-                                    style = MaterialTheme.typography.titleSmallMono
-                                )
-                            }
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            Text("Show less", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            }
-        }
     }
 }
+
 
 @Composable
 fun AwardItem(
@@ -364,7 +324,7 @@ fun AwardItem(
                         )
                     }
                 }
-                
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically

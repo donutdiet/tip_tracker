@@ -2,6 +2,8 @@ package com.example.tiptracker.ui.features.logdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.tiptracker.data.entity.LogImage
+import com.example.tiptracker.data.repository.LogImageRepository
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.utils.roundToTwoDecimals
 import kotlinx.coroutines.channels.Channel
@@ -28,6 +30,7 @@ data class LogDetailUiState(
     val date: String = "",
     val tipAmount: Double = 0.0,
     val totalPerPerson: Double = 0.0,
+    val images: List<LogImage> = emptyList(),
     val isLoading: Boolean = true,
     val isNotFound: Boolean = false,
     val errorMessage: String? = null,
@@ -45,7 +48,8 @@ sealed interface LogDetailEvent {
 
 class LogDetailViewModel(
     private val logId: Int,
-    private val logsRepository: LogRepository
+    private val logsRepository: LogRepository,
+    private val imagesRepository: LogImageRepository
 ) : ViewModel() {
 
     private val _events = Channel<LogDetailEvent>()
@@ -56,6 +60,7 @@ class LogDetailViewModel(
 
     val uiState: StateFlow<LogDetailUiState> = combine(
         isDeleting,
+        imagesRepository.getImages(logId),
         logFlow
             .map { log ->
                 if (log == null) {
@@ -96,8 +101,8 @@ class LogDetailViewModel(
                 )
                 android.util.Log.e("LogDetailViewModel", "Error loading log detail", e)
             }
-    ) { deleting, state ->
-        state.copy(isDeleting = deleting)
+    ) { deleting, images, state ->
+        state.copy(isDeleting = deleting, images = images)
     }
         .stateIn(
             scope = viewModelScope,

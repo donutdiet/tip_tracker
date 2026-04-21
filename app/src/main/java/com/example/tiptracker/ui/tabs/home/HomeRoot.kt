@@ -24,7 +24,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun HomeRoot(
     viewModel: HomeViewModel = koinViewModel(),
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    onLogSaved: (Int) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var currentPage by rememberSaveable { mutableIntStateOf(0) }
@@ -41,10 +42,7 @@ fun HomeRoot(
 
             is HomeEvent.LogSaved -> {
                 currentPage = 0
-                snackbarScope.launch {
-                    snackbarHostState.currentSnackbarData?.dismiss()
-                    snackbarHostState.showSnackbar("Log saved successfully!")
-                }
+                onLogSaved(event.logId)
             }
         }
     }

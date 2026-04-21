@@ -119,7 +119,7 @@ sealed interface HomeAction {
 }
 
 sealed interface HomeEvent {
-    data object LogSaved : HomeEvent
+    data class LogSaved(val logId: Int) : HomeEvent
     data class ShowError(val message: String) : HomeEvent
 }
 
@@ -234,9 +234,9 @@ class HomeViewModel(
                     rating = state.rating,
                     date = state.date
                 )
-                logsRepository.insertLog(log)
+                val id = logsRepository.insertLog(log)
                 clearState()
-                _events.send(HomeEvent.LogSaved)
+                _events.send(HomeEvent.LogSaved(id))
             } catch (e: Exception) {
                 val userMessage = when (e) {
                     is android.database.sqlite.SQLiteFullException -> "Storage is full. Please free some space."

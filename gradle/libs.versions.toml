@@ -1,18 +1,20 @@
 [versions]
 activityCompose = "1.13.0"
-agp = "9.1.0"
+agp = "9.1.1"
 composeBom = "2026.03.01"
 composeCharts = "0.2.5"
 datastore = "1.2.1"
-koin = "4.2.0"
+koin = "4.2.1"
 kotlin = "2.3.20"
 ksp = "2.3.5"
 lifecycleViewmodelCompose = "2.10.0"
-nav3Core = "1.0.1"
+nav3Core = "1.1.0"
 room = "2.8.4"
 uiTextGoogleFonts = "1.10.6"
 datastorePreferencesCore = "1.2.1"
 coreSplashscreen = "1.2.0"
+reorderable = "3.0.0"
+coil = "3.4.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -47,6 +49,8 @@ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscree
 
 # Graphs
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
