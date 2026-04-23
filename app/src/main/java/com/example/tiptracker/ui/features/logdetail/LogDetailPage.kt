@@ -78,6 +78,12 @@ fun LogDetailPage(
             .padding(horizontal = 16.dp)
             .verticalScroll(scrollState)
     ) {
+        Text(
+            text = uiState.restaurantName,
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
         LogStatsCard(
             billAmount = uiState.bill,
             tipAmount = uiState.tipAmount,
