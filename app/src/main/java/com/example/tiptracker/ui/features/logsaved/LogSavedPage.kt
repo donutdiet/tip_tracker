@@ -112,10 +112,24 @@ fun LogSavedPage(
                     text = "Pictures",
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(
-                    text = "drag to reorder",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Drag",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.reorder),
+                        contentDescription = "Reorder icon",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "to reorder pictures",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn(
@@ -233,6 +247,7 @@ private fun ReorderableCollectionItemScope.LogImageListItem(
                 MaterialTheme.colorScheme.surfaceContainer
             }
         ),
+        shape = RoundedCornerShape(4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -302,7 +317,7 @@ private fun ImageThumbnail(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(4.dp))
             .background(MaterialTheme.colorScheme.surface)
     ) {
         if (imageFile == null) {
@@ -327,7 +342,7 @@ private fun ImageThumbnail(
                 },
                 error = {
                     Text(
-                        text = "No preview",
+                        text = "Preview error",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,

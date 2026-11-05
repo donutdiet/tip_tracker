@@ -228,6 +228,7 @@ private fun ReorderableCollectionItemScope.LogImageListItem(
                 MaterialTheme.colorScheme.surfaceContainer
             }
         ),
+        shape = RoundedCornerShape(4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -250,7 +251,7 @@ private fun ReorderableCollectionItemScope.LogImageListItem(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.reorder),
-                    contentDescription = "Drag to reorder image"
+                    contentDescription = "Reorder icon"
                 )
             }
 
@@ -297,7 +298,7 @@ private fun ImageThumbnail(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(4.dp))
             .background(MaterialTheme.colorScheme.surface)
     ) {
         if (imageFile == null) {
@@ -322,7 +323,7 @@ private fun ImageThumbnail(
                 },
                 error = {
                     Text(
-                        text = "No preview",
+                        text = "Preview Error",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,

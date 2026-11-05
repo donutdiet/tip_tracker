@@ -252,7 +252,7 @@ private fun LogStatsCard(
             }
 
             address?.let {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 val inlineContent = mapOf(
                     "locationIcon" to InlineTextContent(
                         Placeholder(
