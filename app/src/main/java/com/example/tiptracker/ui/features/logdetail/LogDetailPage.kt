@@ -3,22 +3,32 @@ package com.example.tiptracker.ui.features.logdetail
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,27 +37,25 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -127,9 +135,6 @@ fun LogDetailPage(
             }
         }
         Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
-//        Spacer(modifier = Modifier.height(20.dp))
-
-
     }
 
     selectedImageIndex?.let { initialPage ->
@@ -325,7 +330,6 @@ private fun LogDetailImageGallery(
                 )
             }
 
-            // HACK: figure out why I can't just import normally
             androidx.compose.animation.AnimatedVisibility(
                 visible = isImageCountVisible,
                 modifier = Modifier
@@ -407,6 +411,7 @@ private fun FullScreenImageDialog(
         initialPage = initialPage,
         pageCount = { imageFiles.size }
     )
+    var currentScale by remember { mutableFloatStateOf(1f) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -415,49 +420,43 @@ private fun FullScreenImageDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.88f))
+                .background(Color.Black.copy(alpha = 0.95f))
         ) {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 72.dp)
+                userScrollEnabled = currentScale <= 1.05f,
+                modifier = Modifier.fillMaxSize()
             ) { page ->
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val imageFile = imageFiles[page]
-                    if (imageFile == null) {
+                val imageFile = imageFiles[page]
+                if (imageFile == null) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onDismiss
+                            )
+                    ) {
                         Text(
                             text = "Preview image",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.White,
                             textAlign = TextAlign.Center
                         )
-                    } else {
-                        SubcomposeAsyncImage(
-                            model = imageFile,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                            loading = {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(28.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            },
-                            error = {
-                                Text(
-                                    text = "Image unavailable",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        )
                     }
+                } else {
+                    ZoomableImage(
+                        imageFile = imageFile,
+                        pageKey = page,
+                        onDismiss = onDismiss,
+                        onScaleChanged = { scale ->
+                            if (pagerState.currentPage == page) {
+                                currentScale = scale
+                            }
+                        }
+                    )
                 }
             }
 
@@ -481,6 +480,122 @@ private fun FullScreenImageDialog(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ZoomableImage(
+    imageFile: File,
+    pageKey: Any,
+    onDismiss: () -> Unit,
+    onScaleChanged: (Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var scale by remember(pageKey) { mutableFloatStateOf(1f) }
+    var offset by remember(pageKey) { mutableStateOf(Offset.Zero) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    var imageAspectRatio by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(scale) {
+        onScaleChanged(scale)
+    }
+
+    val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+        val targetScale = (scale * zoomChange).coerceIn(1f, 4.5f)
+        if (targetScale <= 1f) {
+            scale = 1f
+            offset = Offset.Zero
+        } else {
+            scale = targetScale
+            if (containerSize.width > 0 && containerSize.height > 0 && imageAspectRatio > 0f) {
+                val containerAspect = containerSize.width.toFloat() / containerSize.height.toFloat()
+                val (renderedW, renderedH) = if (imageAspectRatio > containerAspect) {
+                    containerSize.width.toFloat() to (containerSize.width.toFloat() / imageAspectRatio)
+                } else {
+                    (containerSize.height.toFloat() * imageAspectRatio) to containerSize.height.toFloat()
+                }
+                val maxOffsetX = (renderedW * (scale - 1f)) / 2f
+                val maxOffsetY = (renderedH * (scale - 1f)) / 2f
+
+                val panMultiplier = 1.5f
+                val newX = (offset.x + panChange.x * panMultiplier).coerceIn(-maxOffsetX, maxOffsetX)
+                val newY = (offset.y + panChange.y * panMultiplier).coerceIn(-maxOffsetY, maxOffsetY)
+                offset = Offset(newX, newY)
+            }
+        }
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxSize()
+            .onGloballyPositioned { containerSize = it.size }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss
+            )
+    ) {
+        val imageModifier = if (imageAspectRatio > 0f) {
+            Modifier
+                .aspectRatio(imageAspectRatio)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { /* consume click on photo */ }
+                )
+        } else {
+            Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { /* consume click on photo */ }
+                )
+        }
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = imageModifier
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offset.x
+                    translationY = offset.y
+                }
+                .transformable(
+                    state = transformState,
+                    canPan = { scale > 1f }
+                )
+        ) {
+            SubcomposeAsyncImage(
+                model = imageFile,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+                onSuccess = { state ->
+                    val size = state.painter.intrinsicSize
+                    if (size.width > 0 && size.height > 0) {
+                        imageAspectRatio = size.width / size.height
+                    }
+                },
+                loading = {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(36.dp),
+                        strokeWidth = 3.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                error = {
+                    Text(
+                        text = "Image unavailable",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            )
         }
     }
 }
