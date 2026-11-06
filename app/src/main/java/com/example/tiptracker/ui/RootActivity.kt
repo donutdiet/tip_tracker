@@ -3,9 +3,7 @@ package com.example.tiptracker.ui
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -87,8 +85,7 @@ fun RootActivity() {
                 }
             },
             openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) },
-            openImageManager = { navigator.openFullscreen(RootKey.LogImageManager(it)) },
-            pop = { navigator.goBack() }
+            openImageManager = { navigator.openFullscreen(RootKey.LogImageManager(it)) }
         )
     }
 
@@ -104,27 +101,9 @@ fun RootActivity() {
     NavDisplay(
         entries = rootEntries,
         onBack = { navigator.goBack() },
-        transitionSpec = {
-            fullScreenTransform(
-                isPop = false,
-                fromKey = initialState.topRootContentKey(),
-                toKey = targetState.topRootContentKey()
-            )
-        },
-        popTransitionSpec = {
-            fullScreenTransform(
-                isPop = true,
-                fromKey = initialState.topRootContentKey(),
-                toKey = targetState.topRootContentKey()
-            )
-        },
-        predictivePopTransitionSpec = { _ ->
-            fullScreenTransform(
-                isPop = true,
-                fromKey = initialState.topRootContentKey(),
-                toKey = targetState.topRootContentKey()
-            )
-        },
+        transitionSpec = { fullScreenTransform(isPop = false) },
+        popTransitionSpec = { fullScreenTransform(isPop = true) },
+        predictivePopTransitionSpec = { _ -> fullScreenTransform(isPop = true) },
     )
 }
 
@@ -191,19 +170,8 @@ fun AppRoot(
     }
 }
 
-private fun Scene<NavKey>.topRootContentKey(): String? =
-    entries.asReversed().firstOrNull()?.contentKey?.toString()
-
-private fun fullScreenTransform(
-    isPop: Boolean,
-    fromKey: String?,
-    toKey: String?
-) =
-    // HACK: Super scuffed way to configure different transitions for screens
-    if (fromKey?.startsWith("LogSaved") == true || toKey?.startsWith("LogSaved") == true) {
-        slideInVertically(initialOffsetY = { it }) togetherWith
-            slideOutVertically(targetOffsetY = { -it })
-    } else if (isPop) {
+private fun fullScreenTransform(isPop: Boolean) =
+    if (isPop) {
         slideInHorizontally(initialOffsetX = { -it }) togetherWith
             slideOutHorizontally(targetOffsetX = { it })
     } else {
