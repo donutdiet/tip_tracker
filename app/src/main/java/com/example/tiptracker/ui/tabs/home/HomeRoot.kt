@@ -2,6 +2,8 @@ package com.example.tiptracker.ui.tabs.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -11,6 +13,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -29,6 +33,7 @@ fun HomeRoot(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var currentPage by rememberSaveable { mutableIntStateOf(0) }
+    var isResettingOnSave by remember { mutableStateOf(false) }
     val snackbarScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->
@@ -41,6 +46,7 @@ fun HomeRoot(
             }
 
             is HomeEvent.LogSaved -> {
+                isResettingOnSave = true
                 currentPage = 0
                 onLogSaved(event.logId)
             }
@@ -54,7 +60,10 @@ fun HomeRoot(
     AnimatedContent(
         targetState = currentPage,
         transitionSpec = {
-            if (targetState > initialState) {
+            if (isResettingOnSave) {
+                isResettingOnSave = false
+                EnterTransition.None togetherWith ExitTransition.None
+            } else if (targetState > initialState) {
                 // Going forward through the form.
                 slideInVertically { it } + fadeIn() togetherWith
                         slideOutVertically { -it } + fadeOut()
