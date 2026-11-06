@@ -58,7 +58,7 @@ fun RootActivity() {
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         tabEntries(
             openLogDetail = { navigator.openFullscreen(RootKey.LogDetail(it)) },
-            openLogSaved = { navigator.openFullscreen(RootKey.LogSaved(it))},
+            openLogSaved = { navigator.onLogSaved(it) },
             snackbarHostState =  navigationState.snackBarHostState
         )
     }
@@ -135,12 +135,6 @@ fun AppRoot(
     navigator: Navigator,
     tabEntryProvider: (NavKey) -> NavEntry<NavKey>,
 ) {
-    val topLevelPositionByContentKey = remember {
-        TOP_LEVEL_ROUTES
-            .mapKeys { (tabKey, _) -> tabKey.toString() }
-            .mapValues { (_, item) -> item.position }
-    }
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -189,48 +183,16 @@ fun AppRoot(
             NavDisplay(
                 entries = navigationState.toDecoratedTabEntries(tabEntryProvider),
                 onBack = { navigator.goBack() },
-                transitionSpec = {
-                    horizontalTabTransform(
-                        fromPosition = initialState.topLevelPosition(topLevelPositionByContentKey),
-                        toPosition = targetState.topLevelPosition(topLevelPositionByContentKey)
-                    )
-                },
-                popTransitionSpec = {
-                    horizontalTabTransform(
-                        fromPosition = initialState.topLevelPosition(topLevelPositionByContentKey),
-                        toPosition = targetState.topLevelPosition(topLevelPositionByContentKey)
-                    )
-                },
-                predictivePopTransitionSpec = { _ ->
-                    horizontalTabTransform(
-                        fromPosition = initialState.topLevelPosition(topLevelPositionByContentKey),
-                        toPosition = targetState.topLevelPosition(topLevelPositionByContentKey)
-                    )
-                }
+                transitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
+                popTransitionSpec = { EnterTransition.None togetherWith ExitTransition.None },
+                predictivePopTransitionSpec = { _ -> EnterTransition.None togetherWith ExitTransition.None }
             )
         }
     }
 }
 
-private fun Scene<NavKey>.topLevelPosition(positionByContentKey: Map<String, Int>): Int? =
-    entries.asReversed().firstNotNullOfOrNull { entry ->
-        positionByContentKey[entry.contentKey.toString()]
-    }
-
 private fun Scene<NavKey>.topRootContentKey(): String? =
     entries.asReversed().firstOrNull()?.contentKey?.toString()
-
-private fun horizontalTabTransform(fromPosition: Int?, toPosition: Int?) =
-    when {
-        fromPosition == null || toPosition == null || fromPosition == toPosition ->
-            EnterTransition.None togetherWith ExitTransition.None
-        toPosition > fromPosition ->
-            slideInHorizontally(initialOffsetX = { it }) togetherWith
-                slideOutHorizontally(targetOffsetX = { -it })
-        else ->
-            slideInHorizontally(initialOffsetX = { -it }) togetherWith
-                slideOutHorizontally(targetOffsetX = { it })
-    }
 
 private fun fullScreenTransform(
     isPop: Boolean,
