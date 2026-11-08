@@ -18,7 +18,7 @@ kotlin {
 
 extensions.configure<ApplicationExtension> {
     namespace = "com.example.tiptracker"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.jerrywang.tiptracker"
