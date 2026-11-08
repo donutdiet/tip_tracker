@@ -106,7 +106,7 @@ fun LogImageManagerPage(
                 .padding(bottom = 8.dp)
         ) {
             Text(
-                text = "Drag to reorder",
+                text = "Hold and drag to reorder",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

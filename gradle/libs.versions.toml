@@ -13,6 +13,7 @@ room = "2.8.5"
 uiTextGoogleFonts = "1.12.1"
 datastorePreferencesCore = "1.3.0"
 coreSplashscreen = "1.2.0"
+junit = "4.13.2"
 reorderable = "3.1.0"
 coil = "3.6.3"
 
@@ -24,6 +25,7 @@ androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text
 
 androidx-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+junit = { module = "junit:junit", version.ref = "junit" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 
