@@ -70,6 +70,7 @@ import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.formatTipPercent
 import kotlinx.coroutines.delay
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun LogDetailPage(
@@ -306,7 +307,7 @@ private fun LogDetailImageGallery(
         }
 
         isImageCountVisible = true
-        delay(3500)
+        delay(3500.milliseconds)
         isImageCountVisible = false
     }
 
@@ -415,7 +416,10 @@ private fun FullScreenImageDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
         Box(
             modifier = Modifier
