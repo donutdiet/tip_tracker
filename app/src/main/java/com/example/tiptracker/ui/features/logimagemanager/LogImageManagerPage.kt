@@ -1,31 +1,35 @@
 package com.example.tiptracker.ui.features.logimagemanager
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -47,7 +52,7 @@ import com.example.tiptracker.data.entity.LogImage
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
+import sh.calvin.reorderable.rememberReorderableLazyGridState
 import java.io.File
 
 data class LogImageItemUi(
@@ -65,16 +70,21 @@ fun LogImageManagerPage(
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val lazyListState = rememberLazyListState()
+    val lazyGridState = rememberLazyGridState()
     val isBusy = uiState.isAddingImages || uiState.isDeletingImage || uiState.isUpdatingImageOrder
     var localImageItems by remember { mutableStateOf(imageItems) }
     var isDragging by remember { mutableStateOf(false) }
     var hasPendingReorder by remember { mutableStateOf(false) }
-    val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        localImageItems = localImageItems.toMutableList().apply {
-            add(to.index, removeAt(from.index))
+
+    val reorderableLazyGridState = rememberReorderableLazyGridState(lazyGridState) { from, to ->
+        val fromIndex = from.index
+        val toIndex = to.index.coerceIn(0, localImageItems.lastIndex)
+        if (fromIndex in localImageItems.indices && fromIndex != toIndex) {
+            localImageItems = localImageItems.toMutableList().apply {
+                add(toIndex, removeAt(fromIndex))
+            }
+            hasPendingReorder = true
         }
-        hasPendingReorder = true
     }
 
     LaunchedEffect(imageItems) {
@@ -88,61 +98,65 @@ fun LogImageManagerPage(
             .fillMaxSize()
             .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 0.dp)
     ) {
-        if (localImageItems.isEmpty()) {
-            EmptyImagesState(
-                modifier = Modifier.weight(1f)
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        ) {
+            Text(
+                text = "Hold and drag to reorder",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        } else {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Drag",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Icon(
-                    painter = painterResource(R.drawable.reorder),
-                    contentDescription = "Reorder icon",
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = "to reorder pictures",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn(
-                state = lazyListState,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(items = localImageItems, key = { item -> item.image.id }) { item ->
-                    ReorderableItem(reorderableLazyListState, key = item.image.id) { isItemDragging ->
-                        LogImageListItem(
-                            item = item,
-                            index = localImageItems.indexOfFirst { it.image.id == item.image.id },
-                            isDragged = isItemDragging,
-                            isBusy = isBusy,
-                            onRemove = { onAction(LogImageManagerAction.RemoveImage(item.image)) },
-                            onDragStarted = {
-                                isDragging = true
-                                hasPendingReorder = false
-                            },
-                            onDragStopped = {
-                                isDragging = false
-                                if (hasPendingReorder) {
-                                    onAction(
-                                        LogImageManagerAction.ReorderImages(
-                                            localImageItems.map { it.image }
-                                        )
+            Text(
+                text = "${uiState.addedCount}/${uiState.maxImages}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            state = lazyGridState,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            items(items = localImageItems, key = { item -> item.image.id }) { item ->
+                ReorderableItem(reorderableLazyGridState, key = item.image.id) { isItemDragging ->
+                    LogImageGridItem(
+                        item = item,
+                        isDragged = isItemDragging,
+                        isBusy = isBusy,
+                        onRemove = { onAction(LogImageManagerAction.RemoveImage(item.image)) },
+                        onDragStarted = {
+                            isDragging = true
+                            hasPendingReorder = false
+                        },
+                        onDragStopped = {
+                            isDragging = false
+                            if (hasPendingReorder) {
+                                onAction(
+                                    LogImageManagerAction.ReorderImages(
+                                        localImageItems.map { it.image }
                                     )
-                                }
-                                hasPendingReorder = false
+                                )
                             }
-                        )
-                    }
+                            hasPendingReorder = false
+                        }
+                    )
+                }
+            }
+
+            if (uiState.canAddMore) {
+                item(key = "add_photos_button") {
+                    AddPhotosBox(
+                        onClick = onAddImagesClick,
+                        enabled = !isBusy,
+                        isAdding = uiState.isAddingImages
+                    )
                 }
             }
         }
@@ -154,25 +168,6 @@ fun LogImageManagerPage(
                 .fillMaxWidth()
                 .navigationBarsPadding()
         ) {
-            OutlinedButton(
-                onClick = onAddImagesClick,
-                enabled = uiState.canAddMore && !isBusy,
-                shape = RoundedCornerShape(4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (uiState.isAddingImages) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    text = "Add pictures (${uiState.addedCount}/${uiState.maxImages})",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = onDone,
                 enabled = !isBusy,
@@ -189,100 +184,115 @@ fun LogImageManagerPage(
 }
 
 @Composable
-private fun EmptyImagesState(modifier: Modifier = Modifier) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(4.dp)
-            )
-            .padding(24.dp)
-    ) {
-        Text(
-            text = "No pictures added yet.\nUse the button below to add up to 10 pictures to this log.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun ReorderableCollectionItemScope.LogImageListItem(
+private fun ReorderableCollectionItemScope.LogImageGridItem(
     item: LogImageItemUi,
-    index: Int,
     isDragged: Boolean,
     isBusy: Boolean,
     onRemove: () -> Unit,
     onDragStarted: () -> Unit,
     onDragStopped: () -> Unit
 ) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (isDragged) {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer
-            }
+    val scale by animateFloatAsState(
+        targetValue = if (isDragged) 1.15f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
         ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp)
-        ) {
-            IconButton(
-                onClick = {},
-                enabled = !isBusy,
-                modifier = if (isBusy) {
+        label = "drag_scale"
+    )
+
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .then(
+                if (isBusy) {
                     Modifier
                 } else {
-                    Modifier.draggableHandle(
+                    Modifier.longPressDraggableHandle(
                         onDragStarted = { onDragStarted() },
                         onDragStopped = { onDragStopped() }
                     )
                 }
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.reorder),
-                    contentDescription = "Drag to reorder image"
-                )
-            }
-
-            ImageThumbnail(
-                imageFile = item.imageFile,
-                modifier = Modifier.size(72.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+    ) {
+        ImageThumbnail(
+            imageFile = item.imageFile,
+            modifier = Modifier.fillMaxSize()
+        )
 
+        IconButton(
+            onClick = onRemove,
+            enabled = !isBusy,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .size(24.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                    shape = CircleShape
+                )
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.close),
+                contentDescription = "Remove image",
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddPhotosBox(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    isAdding: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(8.dp))
+            .border(
+                border = BorderStroke(
+                    width = 1.5.dp,
+                    color = MaterialTheme.colorScheme.outline
+                ),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(enabled = enabled, onClick = onClick)
+    ) {
+        if (isAdding) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+        } else {
             Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Picture #${index + 1}",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = item.displayName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-            }
-
-            IconButton(
-                onClick = onRemove,
-                enabled = !isBusy
+                modifier = Modifier.padding(8.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.delete),
-                    contentDescription = "Remove image",
+                    painter = painterResource(R.drawable.add),
+                    contentDescription = "Add photos",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Add photos",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -297,8 +307,7 @@ private fun ImageThumbnail(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
     ) {
         if (imageFile == null) {
             Text(
@@ -306,7 +315,7 @@ private fun ImageThumbnail(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(4.dp)
             )
         } else {
             SubcomposeAsyncImage(
@@ -322,11 +331,11 @@ private fun ImageThumbnail(
                 },
                 error = {
                     Text(
-                        text = "No preview",
+                        text = "Error",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(4.dp)
                     )
                 }
             )

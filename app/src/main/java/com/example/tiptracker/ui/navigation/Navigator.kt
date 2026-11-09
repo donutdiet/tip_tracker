@@ -24,6 +24,12 @@ class Navigator(private val state: NavigationState) {
         state.rootBackStack.add(route)
     }
 
+    fun onLogSaved(logId: Int) {
+        state.snackBarHostState.currentSnackbarData?.dismiss()
+        state.topLevelRoute = TabKey.Logs
+        state.rootBackStack.add(RootKey.LogDetail(logId))
+    }
+
     // Unified back for NavDisplay(onBack = ...)
     fun goBack() {
         if (state.isFullScreen) {

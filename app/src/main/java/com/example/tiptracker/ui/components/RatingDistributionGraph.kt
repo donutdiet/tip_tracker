@@ -128,14 +128,14 @@ fun RatingDistributionGraph(distribution: List<RatingCount>) {
             containerColor = popupContainer,
             contentBuilder = { popup ->
                 val count = popup.value.roundToInt()
-                "${popup.dataIndex.toRatingBucketLabel()}: $count ${count.asLogLabel()}"
+                "${popup.dataIndex.toRatingBucketLabel()}\n$count ${count.asLogLabel()}"
             }
         ),
         animationMode = AnimationMode.Together { 0L }
     )
 }
 
-private fun Double.toHalfBucketIndex(): Int {
+internal fun Double.toHalfBucketIndex(): Int {
     return floor(this * 2).toInt().coerceIn(0, 20)
 }
 
@@ -152,9 +152,10 @@ private fun roundUpToStep(value: Double, step: Double): Double {
     return ceil(value / step) * step
 }
 
-private fun Int.toRatingBucketLabel(): String {
+internal fun Int.toRatingBucketLabel(): String {
+    if (this >= 20) return "10.0"
     val lowerBound = this / 2.0
-    val upperBound = (this + 1) / 2.0
+    val upperBound = lowerBound + 0.4
     return "%.1f-%.1f".format(lowerBound, upperBound)
 }
 

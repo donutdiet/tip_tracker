@@ -6,7 +6,6 @@ import androidx.navigation3.runtime.NavKey
 import com.example.tiptracker.ui.features.editlog.EditLogRoot
 import com.example.tiptracker.ui.features.logdetail.LogDetailRoot
 import com.example.tiptracker.ui.features.logimagemanager.LogImageManagerRoot
-import com.example.tiptracker.ui.features.logsaved.LogSavedRoot
 import com.example.tiptracker.ui.features.settings.SettingsRoot
 import com.example.tiptracker.ui.tabs.home.HomeRoot
 import com.example.tiptracker.ui.tabs.logs.LogsRoot
@@ -43,20 +42,11 @@ fun EntryProviderScope<NavKey>.rootEntries(
     onLogUpdated: () -> Unit,
     openEditPage: (Int) -> Unit,
     openImageManager: (Int) -> Unit,
-    pop: () -> Unit,
     snackbarHostState: SnackbarHostState
 ) {
     entry<RootKey.Settings> {
         SettingsRoot(
             onBack = navigateBack
-        )
-    }
-
-    entry<RootKey.LogSaved> { key ->
-        LogSavedRoot(
-            logId = key.id,
-            snackbarHostState = snackbarHostState,
-            onDone = pop
         )
     }
 

@@ -12,7 +12,6 @@ import com.example.tiptracker.ui.features.editlog.EditLogViewModel
 import com.example.tiptracker.ui.features.settings.SettingsViewModel
 import com.example.tiptracker.ui.features.logdetail.LogDetailViewModel
 import com.example.tiptracker.ui.features.logimagemanager.LogImageManagerViewModel
-import com.example.tiptracker.ui.features.logsaved.LogSavedViewModel
 import com.example.tiptracker.ui.tabs.home.HomeViewModel
 import com.example.tiptracker.ui.tabs.logs.LogsViewModel
 import com.example.tiptracker.ui.tabs.profile.ProfileViewModel
@@ -45,7 +44,6 @@ val appModule = module {
     viewModel { (logId: Int) -> LogDetailViewModel(logId, get(), get()) }
     viewModel { (logId: Int) -> EditLogViewModel(logId, get()) }
     viewModel { ProfileViewModel(get()) }
-    viewModel { (logId: Int) -> LogSavedViewModel(logId, get()) }
     viewModel { (logId: Int) -> LogImageManagerViewModel(logId, get()) }
 }
 
