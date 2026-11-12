@@ -15,6 +15,7 @@ import com.example.tiptracker.ui.features.logimagemanager.LogImageManagerViewMod
 import com.example.tiptracker.ui.tabs.home.HomeViewModel
 import com.example.tiptracker.ui.tabs.logs.LogsViewModel
 import com.example.tiptracker.ui.tabs.profile.ProfileViewModel
+import com.google.android.libraries.places.api.Places
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.viewModel
@@ -50,6 +51,10 @@ val appModule = module {
 class TipTracker : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        if (!Places.isInitialized() && BuildConfig.PLACES_API_KEY.isNotEmpty()) {
+            Places.initializeWithNewPlacesApiEnabled(this, BuildConfig.PLACES_API_KEY)
+        }
 
         startKoin {
             androidContext(this@TipTracker)

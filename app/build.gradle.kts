@@ -1,4 +1,4 @@
-import com.android.build.api.dsl.ApplicationExtension
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,6 +8,14 @@ plugins {
     alias(libs.plugins.room)
 }
 
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val placesApiKey = localProperties.getProperty("PLACES_API_KEY") ?: ""
+
 room {
     schemaDirectory("$projectDir/schemas")
 }
@@ -16,7 +24,7 @@ kotlin {
     jvmToolchain(11)
 }
 
-extensions.configure<ApplicationExtension> {
+android {
     namespace = "com.example.tiptracker"
     compileSdk = 37
 
@@ -28,6 +36,13 @@ extensions.configure<ApplicationExtension> {
         versionName = "1.3.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "PLACES_API_KEY", "\"$placesApiKey\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
+        compose = true
     }
 
     buildTypes {
@@ -47,10 +62,6 @@ extensions.configure<ApplicationExtension> {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    buildFeatures {
-        compose = true
     }
 }
 
@@ -98,4 +109,7 @@ dependencies {
 
     // Splash Screen
     implementation(libs.androidx.core.splashscreen)
+
+    // Google Places SDK
+    implementation("com.google.android.libraries.places:places:4.1.0")
 }
