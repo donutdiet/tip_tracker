@@ -13,11 +13,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tiptracker.data.repository.SettingsRepository
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 private const val PERMISSION = Manifest.permission.ACCESS_COARSE_LOCATION
 
@@ -105,6 +110,28 @@ fun rememberLocationPermissionController(
             )
         }
     )
+}
+
+/**
+ * Returns a function to call when the restaurant field gains focus: it shows the system
+ * location dialog the first time only. Whatever the user answers, it never asks again;
+ * from then on the Settings screen is the place to change it.
+ */
+@Composable
+fun rememberLocationPermissionPrompt(): () -> Unit {
+    val settings = koinInject<SettingsRepository>()
+    val scope = rememberCoroutineScope()
+    // Start as "asked" so we never prompt before the stored value has loaded
+    val asked by settings.locationPermissionAsked.collectAsStateWithLifecycle(initialValue = true)
+    val controller = rememberLocationPermissionController(
+        asked = asked,
+        onAsked = { scope.launch { settings.markLocationPermissionAsked() } }
+    )
+    return {
+        if (!asked && controller.status == LocationPermissionStatus.CanRequest) {
+            controller.request()
+        }
+    }
 }
 
 private fun Context.hasLocationPermission(): Boolean =

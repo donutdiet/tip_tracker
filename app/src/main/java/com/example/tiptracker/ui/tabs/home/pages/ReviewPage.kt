@@ -46,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.components.CustomThumb
+import com.example.tiptracker.ui.components.PlaceSearchField
 import com.example.tiptracker.ui.tabs.home.HomeAction
 import com.example.tiptracker.ui.tabs.home.HomeUiState
 import com.example.tiptracker.ui.theme.TipTrackerTheme
@@ -87,48 +88,14 @@ fun ReviewPage(
             .verticalScroll(rememberScrollState())
             .padding(16.dp, 4.dp)
     ) {
-        OutlinedTextField(
-            value = uiState.restaurantName,
-            onValueChange = { onAction(HomeAction.onRestaurantNameChange(it)) },
-            label = {
-                Text("Restaurant Name", style = MaterialTheme.typography.titleSmall)
-            },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Text,
-                capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Next
-            ),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.storefront),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = uiState.address,
-            onValueChange = { onAction(HomeAction.onAddressChange(it)) },
-            label = {
-                Text("Address", style = MaterialTheme.typography.titleSmall)
-            },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Text,
-                capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Next
-            ),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.location),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            singleLine = true,
+        PlaceSearchField(
+            query = uiState.restaurantName,
+            address = uiState.address,
+            predictions = uiState.predictions,
+            isOffline = uiState.isOffline,
+            searchFailed = uiState.searchFailed,
+            onQueryChange = { onAction(HomeAction.onRestaurantQueryChange(it)) },
+            onPlaceSelected = { onAction(HomeAction.onPlaceSelected(it)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))

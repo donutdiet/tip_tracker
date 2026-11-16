@@ -3,11 +3,18 @@ package com.example.tiptracker.ui.tabs.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
+import com.example.tiptracker.data.helper.LocationProvider
+import com.example.tiptracker.data.repository.ConnectionStatus
+import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogRepository
+import com.example.tiptracker.data.repository.PlacePrediction
+import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.data.repository.SettingsRepository
+import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatTipPercent
 import com.example.tiptracker.utils.roundToTwoDecimals
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.ceil
 import kotlin.text.toDoubleOrNull
 
@@ -31,6 +39,13 @@ data class HomeUiState(
     val roundUpTotal: Boolean = false,
     val restaurantName: String = "",
     val address: String = "",
+    // Set only when the restaurant was picked from autocomplete
+    val placeId: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val predictions: List<PlacePrediction> = emptyList(),
+    val searchFailed: Boolean = false,
+    val isOffline: Boolean = false,
     val review: String = "",
     val date: String = LocalDate.now().toString(),
     val rating: Double = 5.0,
@@ -109,8 +124,8 @@ sealed interface HomeAction {
     data class onPartySizeChange(val partySize: String) : HomeAction
     data object onRoundUpTipToggle : HomeAction
     data object onRoundUpTotalToggle : HomeAction
-    data class onRestaurantNameChange(val restaurantName: String) : HomeAction
-    data class onAddressChange(val address: String) : HomeAction
+    data class onRestaurantQueryChange(val query: String) : HomeAction
+    data class onPlaceSelected(val prediction: PlacePrediction) : HomeAction
     data class onReviewChange(val review: String) : HomeAction
     data class onDateChange(val date: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
@@ -125,18 +140,36 @@ sealed interface HomeEvent {
 
 class HomeViewModel(
     private val logsRepository: LogRepository,
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
+    placesRepository: PlacesRepository,
+    locationProvider: LocationProvider,
+    connectivityRepository: ConnectivityRepository
 ) : ViewModel() {
+
+    private val placeSearch = PlaceSearchDelegate(
+        scope = viewModelScope,
+        places = placesRepository,
+        location = locationProvider,
+        connectionStatus = connectivityRepository.status
+    )
+
+    // In-flight lookup of the selected place's coordinates
+    private var coordinatesJob: Job? = null
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = combine(
         _uiState,
         settingsRepository.tipPreset1Percent,
-        settingsRepository.tipPreset2Percent
-    ) { state, p1, p2 ->
+        settingsRepository.tipPreset2Percent,
+        placeSearch.state,
+        connectivityRepository.status
+    ) { state, p1, p2, search, connection ->
         state.copy(
             tipPreset1Percent = p1,
-            tipPreset2Percent = p2
+            tipPreset2Percent = p2,
+            predictions = search.predictions,
+            searchFailed = search.searchFailed,
+            isOffline = connection == ConnectionStatus.Offline
         )
     }.stateIn(
         scope = viewModelScope,
@@ -197,8 +230,8 @@ class HomeViewModel(
                 }
             }
 
-            is HomeAction.onRestaurantNameChange -> _uiState.update { it.copy(restaurantName = action.restaurantName) }
-            is HomeAction.onAddressChange -> _uiState.update { it.copy(address = action.address) }
+            is HomeAction.onRestaurantQueryChange -> onRestaurantQueryChange(action.query)
+            is HomeAction.onPlaceSelected -> onPlaceSelected(action.prediction)
             is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
             is HomeAction.onRatingChange -> _uiState.update { it.copy(rating = action.rating) }
@@ -207,11 +240,50 @@ class HomeViewModel(
         }
     }
 
+    // Editing the text means it may no longer match the previously selected place
+    private fun onRestaurantQueryChange(query: String) {
+        coordinatesJob?.cancel()
+        _uiState.update {
+            it.copy(
+                restaurantName = query,
+                address = "",
+                placeId = null,
+                latitude = null,
+                longitude = null
+            )
+        }
+        placeSearch.onQueryChange(query)
+    }
+
+    private fun onPlaceSelected(prediction: PlacePrediction) {
+        coordinatesJob?.cancel()
+        _uiState.update {
+            it.copy(
+                restaurantName = prediction.name,
+                address = prediction.address,
+                placeId = prediction.placeId,
+                latitude = null,
+                longitude = null
+            )
+        }
+        coordinatesJob = viewModelScope.launch {
+            val coordinates = placeSearch.select(prediction)
+            _uiState.update {
+                // Ignore if the selection changed while we were waiting
+                if (it.placeId == prediction.placeId) {
+                    it.copy(latitude = coordinates?.latitude, longitude = coordinates?.longitude)
+                } else it
+            }
+        }
+    }
+
     private fun saveLog() {
         if (_uiState.value.isSaving) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             try {
+                // Give an in-flight coordinates lookup a moment; save without them if it's slow
+                withTimeoutOrNull(COORDINATES_WAIT_MS) { coordinatesJob?.join() }
                 val state = _uiState.value
                 val bill = state.billAmount.toDoubleOrNull() ?: 0.0
                 val tipPercent = state.tipPercent.toDoubleOrNull() ?: 0.0
@@ -232,7 +304,10 @@ class HomeViewModel(
                     address = address,
                     review = state.review,
                     rating = state.rating,
-                    date = state.date
+                    date = state.date,
+                    placeId = state.placeId,
+                    latitude = state.latitude,
+                    longitude = state.longitude
                 )
                 val id = logsRepository.insertLog(log)
                 clearState()
@@ -251,6 +326,12 @@ class HomeViewModel(
     }
 
     private fun clearState() {
+        coordinatesJob?.cancel()
+        placeSearch.reset()
         _uiState.value = HomeUiState()
+    }
+
+    private companion object {
+        const val COORDINATES_WAIT_MS = 3_000L
     }
 }

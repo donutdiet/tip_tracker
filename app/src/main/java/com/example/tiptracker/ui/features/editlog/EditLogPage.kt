@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.components.CustomThumb
+import com.example.tiptracker.ui.components.PlaceSearchField
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.convertDateToMillis
@@ -181,43 +182,14 @@ fun EditLogPage(
             modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedTextField(
-            value = uiState.restaurantName,
-            onValueChange = { onAction(EditLogAction.RestaurantNameChanged(it)) },
-            label = { Text("Restaurant Name") },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Text,
-                capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Next
-            ),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.storefront),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        OutlinedTextField(
-            value = uiState.address,
-            onValueChange = { onAction(EditLogAction.AddressChanged(it)) },
-            label = { Text("Address") },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Text,
-                capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Next
-            ),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.location),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            singleLine = true,
+        PlaceSearchField(
+            query = uiState.restaurantName,
+            address = uiState.address,
+            predictions = uiState.predictions,
+            isOffline = uiState.isOffline,
+            searchFailed = uiState.searchFailed,
+            onQueryChange = { onAction(EditLogAction.RestaurantQueryChanged(it)) },
+            onPlaceSelected = { onAction(EditLogAction.PlaceSelected(it)) },
             modifier = Modifier.fillMaxWidth()
         )
 
