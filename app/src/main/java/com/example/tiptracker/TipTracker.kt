@@ -1,10 +1,12 @@
 package com.example.tiptracker
 
 import android.app.Application
+import android.net.ConnectivityManager
 import com.example.tiptracker.data.DatabaseProvider
 import com.example.tiptracker.data.TipTrackerDatabase
 import com.example.tiptracker.data.dataStore
 import com.example.tiptracker.data.helper.ImageStorageHelper
+import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogImageRepository
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.SettingsRepository
@@ -37,6 +39,11 @@ val appModule = module {
     single { LogRepository(get(), get()) }
     single { SettingsRepository(get()) }
     single { LogImageRepository(get(), get()) }
+    single {
+        ConnectivityRepository(
+            androidContext().getSystemService(ConnectivityManager::class.java)
+        )
+    }
 
     // ViewModels
     viewModel { HomeViewModel(get(), get()) }

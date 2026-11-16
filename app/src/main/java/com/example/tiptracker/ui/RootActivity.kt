@@ -20,6 +20,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tiptracker.data.repository.ConnectionStatus
+import com.example.tiptracker.data.repository.ConnectivityRepository
+import com.example.tiptracker.ui.components.ConnectionStatusIcon
+import org.koin.compose.koinInject
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -52,6 +58,8 @@ fun RootActivity() {
     )
     val navigator = remember { Navigator(navigationState) }
     val rootScope = rememberCoroutineScope()
+    val connectionStatus by koinInject<ConnectivityRepository>()
+        .status.collectAsStateWithLifecycle()
 
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         tabEntries(
@@ -66,7 +74,8 @@ fun RootActivity() {
             AppRoot(
                 navigationState = navigationState,
                 navigator = navigator,
-                tabEntryProvider = tabEntryProvider
+                tabEntryProvider = tabEntryProvider,
+                connectionStatus = connectionStatus
             )
         }
         rootEntries(
@@ -113,11 +122,27 @@ fun AppRoot(
     navigationState: NavigationState,
     navigator: Navigator,
     tabEntryProvider: (NavKey) -> NavEntry<NavKey>,
+    connectionStatus: ConnectionStatus,
 ) {
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Tip Tracker", style = MaterialTheme.typography.headlineSmall) },
+                navigationIcon = {
+                    ConnectionStatusIcon(
+                        status = connectionStatus,
+                        onClick = {
+                            scope.launch {
+                                navigationState.snackBarHostState.currentSnackbarData?.dismiss()
+                                navigationState.snackBarHostState.showSnackbar(
+                                    "You're offline. Restaurant search is unavailable."
+                                )
+                            }
+                        }
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
