@@ -16,6 +16,18 @@ val localProperties = Properties().apply {
 }
 val placesApiKey = localProperties.getProperty("PLACES_API_KEY") ?: ""
 
+// Without a key the Places SDK is never initialized and restaurant search silently disappears,
+// so refuse to build a release that would ship that way. Debug builds still work without one.
+val checkPlacesApiKey by tasks.registering {
+    val key = placesApiKey
+    doLast {
+        if (key.isBlank()) {
+            throw GradleException("PLACES_API_KEY is missing from local.properties; release builds require it.")
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(checkPlacesApiKey) }
+
 room {
     schemaDirectory("$projectDir/schemas")
 }
@@ -109,8 +121,9 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.ui.test.manifest)
     // MigrationTestHelper parses the exported schemas with Room's serialization classes, which need a
-    // newer kotlinx.serialization than the 1.7.3 the app resolves. Debug-only; androidTest follows it.
-    debugImplementation(libs.kotlinx.serialization.json)
+    // newer kotlinx.serialization than the 1.7.3 the app would otherwise resolve. Declared for every
+    // build type (not debug-only) so debug, tests and release all run the same version.
+    implementation(libs.kotlinx.serialization.json)
 
     // Integration with activities
     implementation(libs.androidx.activity.compose)
