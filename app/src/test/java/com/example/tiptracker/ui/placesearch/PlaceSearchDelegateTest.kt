@@ -207,7 +207,7 @@ class PlaceSearchDelegateTest {
     }
 
     @Test
-    fun `selecting a prediction clears suggestions without searching for the filled-in name`() =
+    fun `selecting a prediction clears suggestions without searching the typed text again`() =
         runTest {
             val delegate = delegate()
             delegate.onQueryChange("pearl")
@@ -222,6 +222,23 @@ class PlaceSearchDelegateTest {
             // TODO: remove this assertion when the coordinates lookup is re-enabled
             coVerify(exactly = 0) { places.fetchCoordinates(any(), any()) }
         }
+
+    @Test
+    fun `reconnecting after a selection does not search the typed text again`() = runTest {
+        val delegate = delegate()
+        delegate.onQueryChange("pearl")
+        settle()
+        delegate.select(pearl)
+        settle()
+
+        status.value = ConnectionStatus.Offline
+        settle()
+        status.value = ConnectionStatus.Online
+        settle()
+
+        assertTrue(delegate.state.value.predictions.isEmpty())
+        coVerify(exactly = 1) { places.search(any(), any(), any()) }
+    }
 
     @Test
     fun `typing after a selection searches again, even for the same text`() = runTest {

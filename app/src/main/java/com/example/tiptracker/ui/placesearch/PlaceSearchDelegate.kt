@@ -47,7 +47,8 @@ class PlaceSearchDelegate(
     private var lastQueryId = 0L
     private val query = MutableStateFlow(Query("", lastQueryId))
 
-    // Text we set ourselves after a selection; it must not trigger another search
+    // The text a selection was made from; it must not be searched again (e.g. when
+    // connectivity changes) until the user edits it
     private var suppressedQuery: String? = null
 
     private var sessionToken = places.newSessionToken()
@@ -78,12 +79,13 @@ class PlaceSearchDelegate(
     }
 
     /**
-     * Call when the user picks a prediction. Returns the place's coordinates, or null if they
-     * couldn't be fetched. Ends the autocomplete session and starts a new one.
+     * Call when the user picks a prediction. Leaves the typed text alone (only what the user
+     * typed is ever saved) and hides suggestions until the next edit. Returns the place's
+     * coordinates, or null if they couldn't be fetched. Ends the autocomplete session and
+     * starts a new one.
      */
     suspend fun select(prediction: PlacePrediction): Coordinates? {
-        suppressedQuery = prediction.name
-        setQuery(prediction.name)
+        suppressedQuery = query.value.text
         _state.value = PlaceSearchState()
 
         // TODO: re-enable when the map ships. Disabled so no Place Details request is made;

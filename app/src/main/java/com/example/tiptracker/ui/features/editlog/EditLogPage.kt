@@ -186,10 +186,12 @@ fun EditLogPage(
             query = uiState.restaurantName,
             address = uiState.address,
             predictions = uiState.predictions,
+            selectedPlace = uiState.selectedPlace,
             isOffline = uiState.isOffline,
             searchFailed = uiState.searchFailed,
             onQueryChange = { onAction(EditLogAction.RestaurantQueryChanged(it)) },
             onPlaceSelected = { onAction(EditLogAction.PlaceSelected(it)) },
+            onClearPlace = { onAction(EditLogAction.ClearPlace) },
             modifier = Modifier.fillMaxWidth()
         )
 

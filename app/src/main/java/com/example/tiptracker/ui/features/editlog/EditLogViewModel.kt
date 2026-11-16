@@ -10,6 +10,7 @@ import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
+import com.example.tiptracker.ui.placesearch.SelectedPlace
 import com.example.tiptracker.utils.roundToTwoDecimals
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -28,10 +29,12 @@ data class EditLogUiState(
     val bill: String = "",
     val tipAmount: String = "",
     val partySize: String = "",
+    // Exactly what the user typed; this is the name that gets saved
     val restaurantName: String = "",
+    // Free-text address typed in an older version of the app (never a Google address)
     val address: String = "",
-    // Set only when the restaurant was picked from autocomplete
-    val placeId: String? = null,
+    // The linked Google Maps place, if any. Only its ID is saved; the rest is looked up.
+    val selectedPlace: SelectedPlace? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val predictions: List<PlacePrediction> = emptyList(),
@@ -71,6 +74,7 @@ sealed interface EditLogAction {
     data class PartySizeChanged(val partySize: String) : EditLogAction
     data class RestaurantQueryChanged(val query: String) : EditLogAction
     data class PlaceSelected(val prediction: PlacePrediction) : EditLogAction
+    data object ClearPlace : EditLogAction
     data class ReviewChanged(val review: String) : EditLogAction
     data class DateChanged(val date: String) : EditLogAction
     data class RatingChanged(val rating: Double) : EditLogAction
@@ -85,7 +89,7 @@ sealed interface EditLogEvent {
 class EditLogViewModel(
     private val logId: Int,
     private val logsRepository: LogRepository,
-    placesRepository: PlacesRepository,
+    private val placesRepository: PlacesRepository,
     locationProvider: LocationProvider,
     connectivityRepository: ConnectivityRepository
 ) : ViewModel() {
@@ -135,6 +139,7 @@ class EditLogViewModel(
             is EditLogAction.PartySizeChanged -> edit { it.copy(partySize = action.partySize) }
             is EditLogAction.RestaurantQueryChanged -> onRestaurantQueryChange(action.query)
             is EditLogAction.PlaceSelected -> onPlaceSelected(action.prediction)
+            EditLogAction.ClearPlace -> clearPlace()
             is EditLogAction.ReviewChanged -> edit { it.copy(review = action.review) }
             is EditLogAction.DateChanged -> edit { it.copy(date = action.date) }
             is EditLogAction.RatingChanged -> edit { it.copy(rating = action.rating) }
@@ -149,28 +154,20 @@ class EditLogViewModel(
         }
     }
 
-    // Editing the text means it may no longer match the previously selected place
+    // Typing never unlinks a picked place (that's what Clear is for), and there's nothing to
+    // search for while one is linked
     private fun onRestaurantQueryChange(query: String) {
-        coordinatesJob?.cancel()
-        edit {
-            it.copy(
-                restaurantName = query,
-                address = "",
-                placeId = null,
-                latitude = null,
-                longitude = null
-            )
-        }
-        placeSearch.onQueryChange(query)
+        val placeLinked = _uiState.value.selectedPlace != null
+        edit { it.copy(restaurantName = query) }
+        if (!placeLinked) placeSearch.onQueryChange(query)
     }
 
+    // Links the place without touching the typed name: only what the user typed is saved
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
         edit {
             it.copy(
-                restaurantName = prediction.name,
-                address = prediction.address,
-                placeId = prediction.placeId,
+                selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
                 longitude = null
             )
@@ -179,7 +176,7 @@ class EditLogViewModel(
             val coordinates = placeSearch.select(prediction)
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
-                if (it.placeId == prediction.placeId) {
+                if (it.selectedPlace?.placeId == prediction.placeId) {
                     it.copy(latitude = coordinates?.latitude, longitude = coordinates?.longitude)
                 } else it
             }
@@ -207,7 +204,7 @@ class EditLogViewModel(
                     partySize = log.partySize.toString(),
                     restaurantName = log.restaurantName,
                     address = log.address ?: "",
-                    placeId = log.placeId,
+                    selectedPlace = log.placeId?.let { SelectedPlace(it) },
                     latitude = log.latitude,
                     longitude = log.longitude,
                     review = log.review,
@@ -219,6 +216,7 @@ class EditLogViewModel(
 
                 initialUiState = loadedState
                 _uiState.value = loadedState
+                log.placeId?.let(::loadPlaceDetails)
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -228,6 +226,27 @@ class EditLogViewModel(
                     )
                 }
                 android.util.Log.e("EditLogViewModel", "Error loading log detail", e)
+            }
+        }
+    }
+
+    private fun clearPlace() {
+        coordinatesJob?.cancel()
+        edit { it.copy(selectedPlace = null, latitude = null, longitude = null) }
+        // Search the current text again so suggestions come back without retyping
+        placeSearch.onQueryChange(_uiState.value.restaurantName)
+    }
+
+    // Only the place ID is stored (Google's terms), so look up the official name and address
+    // each time the screen opens. Includes the name, so this bills at Place Details Pro.
+    private fun loadPlaceDetails(placeId: String) {
+        viewModelScope.launch {
+            val details = placesRepository.fetchPlaceDetails(placeId, includeName = true)
+            _uiState.update {
+                // Skip if the user cleared or changed the place meanwhile
+                if (it.selectedPlace?.placeId == placeId) {
+                    it.copy(selectedPlace = SelectedPlace.from(placeId, details))
+                } else it
             }
         }
     }
@@ -244,6 +263,8 @@ class EditLogViewModel(
                 val bill = state.bill.toDoubleOrNull() ?: 0.0
                 val tipAmount = state.tipAmount.toDoubleOrNull() ?: 0.0
                 val partySize = state.partySize.toIntOrNull() ?: 1
+                // Only the user's own typed address (from older versions) is kept; a place's
+                // address is Google content and never saved
                 val address = state.address.ifEmpty { null }
 
                 if (bill < 0.0 || tipAmount < 0.0 || partySize < 1) {
@@ -263,7 +284,7 @@ class EditLogViewModel(
                         review = state.review,
                         rating = state.rating,
                         date = state.date,
-                        placeId = state.placeId,
+                        placeId = state.selectedPlace?.placeId,
                         latitude = state.latitude,
                         longitude = state.longitude
                     )
@@ -285,7 +306,7 @@ class EditLogViewModel(
                 state.partySize != initial.partySize ||
                 state.restaurantName != initial.restaurantName ||
                 state.address != initial.address ||
-                state.placeId != initial.placeId ||
+                state.selectedPlace?.placeId != initial.selectedPlace?.placeId ||
                 state.review != initial.review ||
                 state.date != initial.date ||
                 state.rating != initial.rating

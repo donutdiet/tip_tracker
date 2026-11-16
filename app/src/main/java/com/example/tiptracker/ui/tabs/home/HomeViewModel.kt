@@ -11,6 +11,7 @@ import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.data.repository.SettingsRepository
 import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
+import com.example.tiptracker.ui.placesearch.SelectedPlace
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatTipPercent
 import com.example.tiptracker.utils.roundToTwoDecimals
@@ -37,10 +38,10 @@ data class HomeUiState(
     val partySize: String = "",
     val roundUpTip: Boolean = false,
     val roundUpTotal: Boolean = false,
+    // Exactly what the user typed; this is the name that gets saved
     val restaurantName: String = "",
-    val address: String = "",
-    // Set only when the restaurant was picked from autocomplete
-    val placeId: String? = null,
+    // The Google Maps place picked from the suggestions, if any. Only its ID is saved.
+    val selectedPlace: SelectedPlace? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
     val predictions: List<PlacePrediction> = emptyList(),
@@ -126,6 +127,7 @@ sealed interface HomeAction {
     data object onRoundUpTotalToggle : HomeAction
     data class onRestaurantQueryChange(val query: String) : HomeAction
     data class onPlaceSelected(val prediction: PlacePrediction) : HomeAction
+    data object onClearPlace : HomeAction
     data class onReviewChange(val review: String) : HomeAction
     data class onDateChange(val date: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
@@ -232,6 +234,7 @@ class HomeViewModel(
 
             is HomeAction.onRestaurantQueryChange -> onRestaurantQueryChange(action.query)
             is HomeAction.onPlaceSelected -> onPlaceSelected(action.prediction)
+            is HomeAction.onClearPlace -> clearPlace()
             is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
             is HomeAction.onRatingChange -> _uiState.update { it.copy(rating = action.rating) }
@@ -240,28 +243,20 @@ class HomeViewModel(
         }
     }
 
-    // Editing the text means it may no longer match the previously selected place
+    // Typing never unlinks a picked place (that's what Clear is for), and there's nothing to
+    // search for while one is linked
     private fun onRestaurantQueryChange(query: String) {
-        coordinatesJob?.cancel()
-        _uiState.update {
-            it.copy(
-                restaurantName = query,
-                address = "",
-                placeId = null,
-                latitude = null,
-                longitude = null
-            )
-        }
-        placeSearch.onQueryChange(query)
+        val placeLinked = _uiState.value.selectedPlace != null
+        _uiState.update { it.copy(restaurantName = query) }
+        if (!placeLinked) placeSearch.onQueryChange(query)
     }
 
+    // Links the place without touching the typed name: only what the user typed is saved
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
         _uiState.update {
             it.copy(
-                restaurantName = prediction.name,
-                address = prediction.address,
-                placeId = prediction.placeId,
+                selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
                 longitude = null
             )
@@ -270,11 +265,18 @@ class HomeViewModel(
             val coordinates = placeSearch.select(prediction)
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
-                if (it.placeId == prediction.placeId) {
+                if (it.selectedPlace?.placeId == prediction.placeId) {
                     it.copy(latitude = coordinates?.latitude, longitude = coordinates?.longitude)
                 } else it
             }
         }
+    }
+
+    private fun clearPlace() {
+        coordinatesJob?.cancel()
+        _uiState.update { it.copy(selectedPlace = null, latitude = null, longitude = null) }
+        // Search the current text again so suggestions come back without retyping
+        placeSearch.onQueryChange(_uiState.value.restaurantName)
     }
 
     private fun saveLog() {
@@ -288,7 +290,6 @@ class HomeViewModel(
                 val bill = state.billAmount.toDoubleOrNull() ?: 0.0
                 val tipPercent = state.tipPercent.toDoubleOrNull() ?: 0.0
                 val partySize = state.partySize.toIntOrNull() ?: 1
-                val address = state.address.ifEmpty { null }
 
                 if (bill < 0.0 || tipPercent < 0.0 || partySize < 1) {
                     _events.send(HomeEvent.ShowError("Please enter a valid bill, tip percent, and party size."))
@@ -300,12 +301,14 @@ class HomeViewModel(
                     tipPercent = state.trueTipPercent,
                     total = state.total,
                     partySize = partySize,
+                    // Google's terms allow storing only the place ID: the name is the user's own
+                    // text, and the place's address is never saved
                     restaurantName = state.restaurantName,
-                    address = address,
+                    address = null,
                     review = state.review,
                     rating = state.rating,
                     date = state.date,
-                    placeId = state.placeId,
+                    placeId = state.selectedPlace?.placeId,
                     latitude = state.latitude,
                     longitude = state.longitude
                 )

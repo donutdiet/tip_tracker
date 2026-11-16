@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -52,6 +53,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,6 +65,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
+import com.example.tiptracker.ui.components.GoogleMapsAttribution
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.ui.theme.titleSmallMono
@@ -101,7 +105,9 @@ fun LogDetailPage(
             partySize = uiState.partySize,
             totalPerPerson = uiState.totalPerPerson,
             tipPercent = uiState.tipPercent,
-            address = uiState.address
+            address = uiState.address,
+            addressFromPlaces = uiState.addressFromPlaces,
+            addressAttributions = uiState.addressAttributions
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -156,7 +162,9 @@ private fun LogStatsCard(
     partySize: Int,
     totalPerPerson: Double,
     tipPercent: Double,
-    address: String? = null
+    address: String? = null,
+    addressFromPlaces: Boolean = false,
+    addressAttributions: List<String> = emptyList()
 ) {
     Card(
         shape = RoundedCornerShape(4.dp),
@@ -285,6 +293,24 @@ private fun LogStatsCard(
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
+                // A looked-up address is Google content: show the attributions Google requires
+                if (addressFromPlaces) {
+                    addressAttributions.forEach { attribution ->
+                        Text(
+                            // May contain HTML links
+                            text = AnnotatedString.fromHtml(attribution),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    GoogleMapsAttribution(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentWidth(Alignment.End)
+                    )
+                }
             }
         }
     }

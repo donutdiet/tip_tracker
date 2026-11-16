@@ -53,7 +53,7 @@ val appModule = module {
     viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
     viewModel { SettingsViewModel(get()) }
     viewModel { LogsViewModel(get()) }
-    viewModel { (logId: Int) -> LogDetailViewModel(logId, get(), get()) }
+    viewModel { (logId: Int) -> LogDetailViewModel(logId, get(), get(), get()) }
     viewModel { (logId: Int) -> EditLogViewModel(logId, get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get()) }
     viewModel { (logId: Int) -> LogImageManagerViewModel(logId, get()) }

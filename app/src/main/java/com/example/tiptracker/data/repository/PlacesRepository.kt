@@ -24,6 +24,17 @@ data class PlacePrediction(
     val address: String
 )
 
+/**
+ * Google content about a place, for display only: Google's terms don't allow storing it
+ * (only the place ID may be saved). [attributions] are third-party credits Google requires
+ * to be shown alongside it, and may contain HTML links.
+ */
+data class PlaceDetails(
+    val name: String?,
+    val address: String?,
+    val attributions: List<String> = emptyList()
+)
+
 sealed interface PlaceSearchResult {
     data class Success(val predictions: List<PlacePrediction>) : PlaceSearchResult
 
@@ -105,6 +116,38 @@ class PlacesRepository(private val context: Context) {
             throw e
         } catch (e: Exception) {
             android.util.Log.e("PlacesRepository", "Fetching place coordinates failed", e)
+            null
+        }
+    }
+
+    /**
+     * Current details of [placeId] for display, or null on any failure (offline, quota, ...).
+     * Never persist the result or keep it beyond the screen showing it (Google's terms).
+     * The address alone bills at Place Details Essentials; adding the name ([includeName])
+     * bills the whole request at Pro, so only ask for it where it's shown.
+     * No session token: this is a standalone lookup, not the end of an autocomplete search.
+     */
+    suspend fun fetchPlaceDetails(placeId: String, includeName: Boolean): PlaceDetails? {
+        val client = client ?: return null
+        val cancellation = CancellationTokenSource()
+        return try {
+            val fields = buildList {
+                add(Place.Field.FORMATTED_ADDRESS)
+                if (includeName) add(Place.Field.DISPLAY_NAME)
+            }
+            val request = FetchPlaceRequest.builder(placeId, fields)
+                .setCancellationToken(cancellation.token)
+                .build()
+            val place = client.fetchPlace(request).await(cancellation).place
+            PlaceDetails(
+                name = place.displayName,
+                address = place.formattedAddress,
+                attributions = place.attributions.orEmpty()
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.e("PlacesRepository", "Fetching place details failed", e)
             null
         }
     }
