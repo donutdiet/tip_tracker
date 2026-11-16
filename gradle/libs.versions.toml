@@ -16,6 +16,8 @@ coreSplashscreen = "1.2.0"
 junit = "4.13.2"
 reorderable = "3.1.0"
 coil = "3.6.3"
+places = "6.0.2"
+playServicesLocation = "21.4.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -53,6 +55,10 @@ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscree
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+
+# Google Places and Location
+google-places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

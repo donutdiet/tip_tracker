@@ -6,6 +6,7 @@ import com.example.tiptracker.data.DatabaseProvider
 import com.example.tiptracker.data.TipTrackerDatabase
 import com.example.tiptracker.data.dataStore
 import com.example.tiptracker.data.helper.ImageStorageHelper
+import com.example.tiptracker.data.helper.LocationProvider
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogImageRepository
 import com.example.tiptracker.data.repository.LogRepository
@@ -34,6 +35,7 @@ val appModule = module {
 
     // Helpers
     single { ImageStorageHelper(androidContext()) }
+    single { LocationProvider(androidContext()) }
 
     // Repository
     single { LogRepository(get(), get()) }

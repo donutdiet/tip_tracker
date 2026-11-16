@@ -111,5 +111,6 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
 
     // Google Places SDK
-    implementation("com.google.android.libraries.places:places:4.1.0")
+    implementation(libs.google.places)
+    implementation(libs.play.services.location)
 }

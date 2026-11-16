@@ -9,6 +9,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.tiptracker.ui.components.CustomThumb
 import com.example.tiptracker.ui.components.LabeledSwitch
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.utils.LocationPermissionStatus
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,6 +34,8 @@ import kotlin.math.roundToInt
 fun SettingsPage(
     uiState: SettingsState,
     onAction: (SettingsAction) -> Unit,
+    locationStatus: LocationPermissionStatus,
+    onLocationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Use local values to display on UI as user scrolls; only write to DataStore on slider release
@@ -86,6 +90,39 @@ fun SettingsPage(
             valueRange = 0f..50f,
             thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
         )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Nearby restaurant search", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    text = when (locationStatus) {
+                        LocationPermissionStatus.Granted ->
+                            "On. Your approximate location is used to show nearby places first."
+                        LocationPermissionStatus.CanRequest ->
+                            "Allow approximate location to show nearby places first."
+                        LocationPermissionStatus.SettingsRequired ->
+                            "Off. Location can be enabled in system settings."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = onLocationClick) {
+                Text(
+                    text = when (locationStatus) {
+                        LocationPermissionStatus.Granted -> "Manage"
+                        LocationPermissionStatus.CanRequest -> "Enable"
+                        LocationPermissionStatus.SettingsRequired -> "Open settings"
+                    },
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
     }
 }
 
@@ -95,7 +132,9 @@ fun SettingsPagePreview() {
     TipTrackerTheme { 
         SettingsPage(
             uiState = SettingsState(),
-            onAction = {}
+            onAction = {},
+            locationStatus = LocationPermissionStatus.CanRequest,
+            onLocationClick = {}
         )
     }
 }

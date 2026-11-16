@@ -17,6 +17,14 @@ class SettingsRepository(private val context: Context) {
     val tipPreset2Percent = context.dataStore.data
         .map { it[SettingsKeys.TIP_PERCENT_PRESET_2] ?: 15 }
 
+    // Whether the in-app location permission request has been shown at least once
+    val locationPermissionAsked: Flow<Boolean> = context.dataStore.data
+        .map { it[SettingsKeys.LOCATION_PERMISSION_ASKED] ?: false }
+
+    suspend fun markLocationPermissionAsked() {
+        context.dataStore.edit { it[SettingsKeys.LOCATION_PERMISSION_ASKED] = true }
+    }
+
     suspend fun saveDarkMode(enabled: Boolean) {
         context.dataStore.edit { it[SettingsKeys.DARK_MODE] = enabled }
     }
