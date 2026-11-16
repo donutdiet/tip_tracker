@@ -140,8 +140,9 @@ class PlaceSearchDelegate(
     private fun String.isSearchable() = trim().length >= MIN_QUERY_LENGTH
 
     private companion object {
-        const val DEBOUNCE_MS = 300L
-        const val MIN_QUERY_LENGTH = 3
+        // Longer debounce and minimum length keep billed autocomplete requests down
+        const val DEBOUNCE_MS = 500L
+        const val MIN_QUERY_LENGTH = 5
         const val LOCATION_TIMEOUT_MS = 2_000L
     }
 }

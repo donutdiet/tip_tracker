@@ -47,7 +47,7 @@ class PlaceSearchDelegateTest {
         PlaceSearchDelegate(backgroundScope, places, location, status)
 
     // advanceUntilIdle() ignores background work, so move virtual time past the debounce
-    // (300 ms) and any simulated latency explicitly, then run what is due.
+    // (500 ms) and any simulated latency explicitly, then run what is due.
     private fun TestScope.settle() {
         advanceTimeBy(1_500)
         runCurrent()
@@ -57,25 +57,25 @@ class PlaceSearchDelegateTest {
     fun `rapid typing is coalesced into a single search for the final text`() = runTest {
         val delegate = delegate()
 
-        delegate.onQueryChange("piz")
-        advanceTimeBy(100)
-        delegate.onQueryChange("pizz")
-        advanceTimeBy(100)
         delegate.onQueryChange("pizza")
+        advanceTimeBy(100)
+        delegate.onQueryChange("pizzas")
+        advanceTimeBy(100)
+        delegate.onQueryChange("pizzash")
         settle()
 
         coVerify(exactly = 1) { places.search(any(), any(), any()) }
-        coVerify { places.search("pizza", null, token) }
+        coVerify { places.search("pizzash", null, token) }
         assertEquals(listOf(pearl), delegate.state.value.predictions)
     }
 
     @Test
-    fun `queries shorter than three characters do not search`() = runTest {
+    fun `queries shorter than five characters do not search`() = runTest {
         val delegate = delegate()
 
-        delegate.onQueryChange("ab")
+        delegate.onQueryChange("abcd")
         settle()
-        delegate.onQueryChange("  ab  ")
+        delegate.onQueryChange("  abcd  ")
         settle()
 
         coVerify(exactly = 0) { places.search(any(), any(), any()) }
@@ -170,7 +170,7 @@ class PlaceSearchDelegateTest {
         val delegate = delegate()
 
         delegate.onQueryChange("pizza")
-        advanceTimeBy(301) // debounce elapsed, first request now in flight
+        advanceTimeBy(501) // debounce elapsed, first request now in flight
         delegate.onQueryChange("pizzas")
         settle()
 
