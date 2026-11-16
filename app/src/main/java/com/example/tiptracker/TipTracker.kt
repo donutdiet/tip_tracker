@@ -10,6 +10,7 @@ import com.example.tiptracker.data.helper.LocationProvider
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogImageRepository
 import com.example.tiptracker.data.repository.LogRepository
+import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.data.repository.SettingsRepository
 import com.example.tiptracker.ui.features.editlog.EditLogViewModel
 import com.example.tiptracker.ui.features.settings.SettingsViewModel
@@ -40,6 +41,7 @@ val appModule = module {
     // Repository
     single { LogRepository(get(), get()) }
     single { SettingsRepository(get()) }
+    single { PlacesRepository(androidContext()) }
     single { LogImageRepository(get(), get()) }
     single {
         ConnectivityRepository(
