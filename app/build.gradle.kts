@@ -101,8 +101,16 @@ dependencies {
 
     // UI Tests
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // MigrationTestHelper parses the exported schemas with Room's serialization classes, which need a
+    // newer kotlinx.serialization than the 1.7.3 the app resolves. Debug-only; androidTest follows it.
+    debugImplementation(libs.kotlinx.serialization.json)
 
     // Integration with activities
     implementation(libs.androidx.activity.compose)

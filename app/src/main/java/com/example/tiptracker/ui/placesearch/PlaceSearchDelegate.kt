@@ -40,7 +40,12 @@ class PlaceSearchDelegate(
     private val location: LocationProvider,
     connectionStatus: Flow<ConnectionStatus>
 ) {
-    private val query = MutableStateFlow("")
+    // Each edit gets a fresh id so that retyping identical text (e.g. after a selection)
+    // still counts as new input and is not swallowed by distinctUntilChanged
+    private data class Query(val text: String, val id: Long)
+
+    private var lastQueryId = 0L
+    private val query = MutableStateFlow(Query("", lastQueryId))
 
     // Text we set ourselves after a selection; it must not trigger another search
     private var suppressedQuery: String? = null
@@ -55,15 +60,15 @@ class PlaceSearchDelegate(
         combine(
             query.debounce(DEBOUNCE_MS.milliseconds).distinctUntilChanged(),
             connectionStatus.distinctUntilChanged()
-        ) { text, status -> text to status }
-            .mapLatest { (text, status) -> search(text, status) }
+        ) { input, status -> input to status }
+            .mapLatest { (input, status) -> search(input, status) }
             .launchIn(scope)
     }
 
     /** Call for every edit the user makes to the field. */
     fun onQueryChange(text: String) {
         suppressedQuery = null
-        query.value = text
+        setQuery(text)
         _state.update {
             it.copy(
                 searchFailed = false,
@@ -78,22 +83,33 @@ class PlaceSearchDelegate(
      */
     suspend fun select(prediction: PlacePrediction): Coordinates? {
         suppressedQuery = prediction.name
-        query.value = prediction.name
+        setQuery(prediction.name)
         _state.value = PlaceSearchState()
 
-        val finishedSession = sessionToken
+        // TODO: re-enable when the map ships. Disabled so no Place Details request is made;
+        //  logs are saved with place_id only and lat/lng stay null until then.
+        //  Note this also means the autocomplete session is never ended by a details call.
+        // val finishedSession = sessionToken
+        // sessionToken = places.newSessionToken()
+        // return places.fetchCoordinates(prediction.placeId, finishedSession)
+
         sessionToken = places.newSessionToken()
-        return places.fetchCoordinates(prediction.placeId, finishedSession)
+        return null
     }
 
     /** Clears everything, e.g. when the form is reset. */
     fun reset() {
         suppressedQuery = null
-        query.value = ""
+        setQuery("")
         _state.value = PlaceSearchState()
     }
 
-    private suspend fun search(text: String, status: ConnectionStatus) {
+    private fun setQuery(text: String) {
+        query.value = Query(text, ++lastQueryId)
+    }
+
+    private suspend fun search(input: Query, status: ConnectionStatus) {
+        val text = input.text
         val trimmed = text.trim()
         if (status != ConnectionStatus.Online ||
             !places.isAvailable ||
@@ -112,7 +128,7 @@ class PlaceSearchDelegate(
         val result = places.search(trimmed, origin, sessionToken)
 
         // Drop results for a query the user has already edited
-        if (query.value != text) return
+        if (query.value != input) return
         _state.value = when (result) {
             is PlaceSearchResult.Success -> PlaceSearchState(predictions = result.predictions)
             PlaceSearchResult.Failure -> PlaceSearchState(searchFailed = true)
