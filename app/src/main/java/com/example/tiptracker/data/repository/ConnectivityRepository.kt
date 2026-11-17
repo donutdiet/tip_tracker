@@ -37,9 +37,15 @@ class ConnectivityRepository(private val connectivityManager: ConnectivityManage
             }
 
             override fun onLost(network: Network) {
-                // Re-read rather than assume Offline: during a handoff (e.g. Wi-Fi -> cellular)
-                // the old network's loss can arrive after the new default is already up.
-                trySend(connectivityManager.currentStatus())
+                // During a handoff (e.g. Wi-Fi -> cellular) the old network's loss can arrive
+                // after the new default is already up, so re-read in that case. But when no
+                // other network takes over, activeNetwork can still briefly report the lost
+                // one as validated, and no further callback follows, so treat that as Offline.
+                val active = connectivityManager.activeNetwork
+                trySend(
+                    if (active == null || active == network) ConnectionStatus.Offline
+                    else connectivityManager.currentStatus()
+                )
             }
         }
         // Registering does not deliver an initial value if there is no default network.
