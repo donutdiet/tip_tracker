@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
@@ -130,20 +132,18 @@ fun LogDetailPage(
         ) {
             Text(text = "Review", style = MaterialTheme.typography.bodyLarge)
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.star),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = uiState.rating.toString(),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+            Text(
+                text = buildAnnotatedString {
+                    append("%.1f".format(uiState.rating))
+                    withStyle(
+                        MaterialTheme.typography.bodySmall.toSpanStyle()
+                            .copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ) {
+                        append(" / 10")
+                    }
+                },
+                style = MaterialTheme.typography.titleMedium
+            )
         }
         Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
     }
@@ -496,9 +496,11 @@ private fun FullScreenImageDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    // The dialog draws edge to edge, so keep the bar clear of the status bar
+                    .statusBarsPadding()
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .align(Alignment.TopCenter)
             ) {
                 Text(
                     text = "${pagerState.currentPage + 1} / ${imageFiles.size}",

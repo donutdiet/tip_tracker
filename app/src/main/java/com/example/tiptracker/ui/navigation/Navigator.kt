@@ -10,6 +10,8 @@ class Navigator(private val state: NavigationState) {
     // ----- Tab layer -----
     fun switchTab(route: NavKey) {
         check(route in state.tabBackStacks.keys) { "Unknown tab route: $route" }
+        // A message like "Log deleted" belongs to the tab it was shown on
+        if (route != state.topLevelRoute) state.snackBarHostState.currentSnackbarData?.dismiss()
         state.topLevelRoute = route
     }
 

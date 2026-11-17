@@ -15,24 +15,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -43,15 +31,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
-import com.example.tiptracker.ui.components.CustomThumb
+import com.example.tiptracker.ui.components.DateRatingCard
 import com.example.tiptracker.ui.components.PlaceSearchField
 import com.example.tiptracker.ui.theme.TipTrackerTheme
-import com.example.tiptracker.ui.theme.titleMediumMono
-import com.example.tiptracker.utils.convertDateToMillis
-import com.example.tiptracker.utils.convertMillisToDate
-import com.example.tiptracker.utils.formatDateForDisplay
+import com.example.tiptracker.ui.theme.titleSmallMono
 import com.example.tiptracker.utils.formatTipPercent
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,18 +45,7 @@ fun EditLogPage(
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
-    var showDatePicker by remember { mutableStateOf(false) }
-    val initialDateMillis = remember(uiState.date) {
-        convertDateToMillis(uiState.date)
-    }
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDateMillis
-    )
 
-    var localRatingValue by remember { mutableFloatStateOf(uiState.rating.toFloat()) }
-    LaunchedEffect(uiState.rating) {
-        localRatingValue = uiState.rating.toFloat()
-    }
 
     when {
         uiState.isLoading -> {
@@ -149,16 +122,16 @@ fun EditLogPage(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Tip Percent", style = MaterialTheme.typography.titleMediumMono)
-                Text(text = "${formatTipPercent(uiState.tipPercent)}%", style = MaterialTheme.typography.titleMediumMono)
+                Text(text = "Tip Percent", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "${formatTipPercent(uiState.tipPercent)}%", style = MaterialTheme.typography.titleSmallMono)
             }
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Total", style = MaterialTheme.typography.titleMediumMono)
-                Text(text = "$${uiState.total}", style = MaterialTheme.typography.titleMediumMono)
+                Text(text = "Total", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "$${uiState.total}", style = MaterialTheme.typography.titleSmallMono)
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -208,66 +181,18 @@ fun EditLogPage(
                 onDone = { focusManager.clearFocus() }
             ),
             textStyle = MaterialTheme.typography.bodyMedium,
-            minLines = 4,
+            minLines = 8,
+            maxLines = 16,
             modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedTextField(
-            value = formatDateForDisplay(uiState.date),
-            onValueChange = {},
-            label = { Text("Date") },
-            supportingText = { Text("Click the calendar icon to set the date") },
-            readOnly = true,
-            placeholder = { Text("Tap to select a date") },
-            leadingIcon = {
-                IconButton(onClick = { showDatePicker = true }) {
-                    Icon(
-                        painter = painterResource(R.drawable.event),
-                        contentDescription = "Open date picker",
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            },
-            singleLine = true,
+        DateRatingCard(
+            date = uiState.date,
+            onDateChange = { onAction(EditLogAction.DateChanged(it)) },
+            rating = uiState.rating,
+            onRatingChange = { onAction(EditLogAction.RatingChanged(it)) },
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Column {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Rating", style = MaterialTheme.typography.bodyLarge)
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.star),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        "%.1f".format(localRatingValue),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-            Slider(
-                value = localRatingValue,
-                onValueChange = { localRatingValue = it },
-                onValueChangeFinished = {
-                    val rounded = (localRatingValue * 10f).roundToInt() / 10.0
-                    onAction(EditLogAction.RatingChanged(rounded))
-                },
-                valueRange = 0f..10f,
-                thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
-            )
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -278,40 +203,6 @@ fun EditLogPage(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (uiState.isUpdating) "Updating..." else "Update")
-        }
-    }
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            onAction(EditLogAction.DateChanged(convertMillisToDate(millis)))
-                        }
-                        showDatePicker = false
-                        focusManager.clearFocus()
-                    }
-                ) {
-                    Text("Ok")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDatePicker = false
-                        focusManager.clearFocus()
-                    }
-                ) {
-                    Text("Cancel")
-                }
-            }
-        ) {
-            DatePicker(
-                state = datePickerState,
-                showModeToggle = false
-            )
         }
     }
 }

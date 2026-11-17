@@ -1,13 +1,19 @@
 package com.example.tiptracker.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,10 +31,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.fromHtml
@@ -176,64 +180,88 @@ fun PlaceSearchField(
     }
 }
 
-/** The linked place's Google details, with the attribution Google requires and a Clear button. */
+/**
+ * The linked place's Google details in a small tinted box under the field, with the
+ * attribution Google requires and a button to unlink it.
+ */
 @Composable
 private fun SelectedPlaceInfo(place: SelectedPlace, onClear: () -> Unit) {
-    Column(modifier = Modifier.padding(start = 16.dp, top = 4.dp)) {
-        when {
-            place.name != null || place.address != null -> {
-                place.name?.let {
+    val background = MaterialTheme.colorScheme.surfaceContainerLow
+    Surface(
+        color = background,
+        shape = MaterialTheme.shapes.extraSmall,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.location),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                if (place.name != null || place.address != null) {
+                    place.name?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    place.address?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    place.attributions.forEach {
+                        Text(
+                            text = AnnotatedString.fromHtml(it),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
                     Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                place.address?.let {
-                    Text(
-                        text = it,
+                        text = if (place.lookupFailed) {
+                            "Linked to a Google Maps place. Its details couldn't be loaded."
+                        } else {
+                            "Loading place details…"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                place.attributions.forEach {
-                    Text(
-                        text = AnnotatedString.fromHtml(it),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                GoogleMapsAttribution(
+                    background = background,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
 
-            else -> Text(
-                text = if (place.lookupFailed) {
-                    "Linked to a Google Maps place. Its details couldn't be loaded."
-                } else {
-                    "Loading place details…"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 2.dp)
-        ) {
-            // Styled as a text link rather than a full button to keep the row compact
-            Text(
-                text = "Clear",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+            TextButton(
+                onClick = onClear,
+                contentPadding = PaddingValues(horizontal = 8.dp),
                 modifier = Modifier
-                    .clip(MaterialTheme.shapes.small)
-                    .clickable(role = Role.Button, onClick = onClear)
-                    .padding(vertical = 2.dp)
-            )
-            GoogleMapsAttribution()
+                    .heightIn(min = 32.dp)
+                    // The 32dp button centers its label 6dp below the name's first line
+                    // (20sp line height); shift it up so the two line up
+                    .offset(y = (-6).dp)
+            ) {
+                Text("Clear", style = MaterialTheme.typography.labelMedium)
+            }
         }
     }
 }
