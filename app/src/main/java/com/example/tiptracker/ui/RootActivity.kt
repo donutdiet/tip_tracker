@@ -6,23 +6,32 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tiptracker.data.repository.ConnectionStatus
+import com.example.tiptracker.data.repository.ConnectivityRepository
+import com.example.tiptracker.ui.components.ConnectionStatusIcon
+import org.koin.compose.koinInject
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -52,6 +61,8 @@ fun RootActivity() {
     )
     val navigator = remember { Navigator(navigationState) }
     val rootScope = rememberCoroutineScope()
+    val connectionStatus by koinInject<ConnectivityRepository>()
+        .status.collectAsStateWithLifecycle()
 
     val tabEntryProvider: (NavKey) -> NavEntry<NavKey> = entryProvider {
         tabEntries(
@@ -66,7 +77,8 @@ fun RootActivity() {
             AppRoot(
                 navigationState = navigationState,
                 navigator = navigator,
-                tabEntryProvider = tabEntryProvider
+                tabEntryProvider = tabEntryProvider,
+                connectionStatus = connectionStatus
             )
         }
         rootEntries(
@@ -113,11 +125,28 @@ fun AppRoot(
     navigationState: NavigationState,
     navigator: Navigator,
     tabEntryProvider: (NavKey) -> NavEntry<NavKey>,
+    connectionStatus: ConnectionStatus,
 ) {
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
+                expandedHeight = 56.dp,
                 title = { Text("Tip Tracker", style = MaterialTheme.typography.headlineSmall) },
+                navigationIcon = {
+                    ConnectionStatusIcon(
+                        status = connectionStatus,
+                        onClick = {
+                            scope.launch {
+                                navigationState.snackBarHostState.currentSnackbarData?.dismiss()
+                                navigationState.snackBarHostState.showSnackbar(
+                                    "You're offline. Restaurant search is unavailable."
+                                )
+                            }
+                        }
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 ),
@@ -132,12 +161,12 @@ fun AppRoot(
             )
         },
         bottomBar = {
-            NavigationBar(
+            ShortNavigationBar(
                 containerColor = MaterialTheme.colorScheme.background
             ) {
                 TOP_LEVEL_ROUTES.forEach { (key, value) ->
                     val isSelected = key == navigationState.topLevelRoute
-                    NavigationBarItem(
+                    ShortNavigationBarItem(
                         selected = isSelected,
                         onClick = { navigator.switchTab(key) },
                         icon = {
@@ -158,6 +187,9 @@ fun AppRoot(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // The bars' space is already taken, so the keyboard only pushes up by the rest
+                .consumeWindowInsets(innerPadding)
+                .imePadding()
         ) {
             NavDisplay(
                 entries = navigationState.toDecoratedTabEntries(tabEntryProvider),

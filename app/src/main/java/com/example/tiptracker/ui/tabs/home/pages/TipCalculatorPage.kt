@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -13,12 +14,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -58,10 +62,14 @@ fun TipCalculatorPage(
 ) {
     val focusManager = LocalFocusManager.current
 
+    // Centered when it fits; scrollable when the keyboard leaves too little room
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     Column(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .fillMaxWidth()
+            .heightIn(min = maxHeight)
             .padding(16.dp, 4.dp)
     ) {
         OutlinedTextField(
@@ -139,11 +147,11 @@ fun TipCalculatorPage(
                     Text(
                         "Custom",
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.fillMaxWidth()
                     )
                 },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+                textStyle = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center),
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -276,6 +284,7 @@ fun TipCalculatorPage(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -319,7 +328,7 @@ fun PresetTipButton(
         ) {
             Text(
                 text = "$percent%",
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.titleSmall
             )
         }
     }

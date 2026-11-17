@@ -13,4 +13,5 @@ object SettingsKeys {
     val DARK_MODE = booleanPreferencesKey("dark_mode")
     val TIP_PERCENT_PRESET_1 = intPreferencesKey("tip_percent_preset_1")
     val TIP_PERCENT_PRESET_2 = intPreferencesKey("tip_percent_preset_2")
+    val LOCATION_PERMISSION_ASKED = booleanPreferencesKey("location_permission_asked")
 }

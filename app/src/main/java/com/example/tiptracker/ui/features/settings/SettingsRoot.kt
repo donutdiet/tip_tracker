@@ -13,9 +13,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tiptracker.R
+import com.example.tiptracker.utils.rememberLocationPermissionController
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,10 +27,15 @@ fun SettingsRoot(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val locationPermission = rememberLocationPermissionController(
+        asked = uiState.locationPermissionAsked,
+        onAsked = { viewModel.onAction(SettingsAction.markLocationPermissionAsked) }
+    )
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
+                expandedHeight = 56.dp,
                 title = { Text(text = "Settings", style = MaterialTheme.typography.headlineSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
@@ -47,6 +54,8 @@ fun SettingsRoot(
         SettingsPage(
             uiState = uiState,
             onAction = viewModel::onAction,
+            locationStatus = locationPermission.status,
+            onLocationClick = locationPermission::onClick,
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()

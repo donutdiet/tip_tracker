@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -232,17 +233,18 @@ private fun ReorderableCollectionItemScope.LogImageGridItem(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(4.dp)
-                .size(24.dp)
+                .size(20.dp)
+                // A faint dark scrim keeps the X legible on light photos without a bright ring
                 .background(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                    color = Color.Black.copy(alpha = 0.35f),
                     shape = CircleShape
                 )
         ) {
             Icon(
                 painter = painterResource(R.drawable.close),
                 contentDescription = "Remove image",
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(16.dp)
+                tint = Color.White,
+                modifier = Modifier.size(14.dp)
             )
         }
     }
@@ -267,7 +269,7 @@ private fun AddPhotosBox(
                 ),
                 shape = RoundedCornerShape(8.dp)
             )
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(enabled = enabled, onClick = onClick)
     ) {
         if (isAdding) {

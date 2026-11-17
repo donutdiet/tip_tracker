@@ -5,14 +5,21 @@ import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.LogImage
 import com.example.tiptracker.data.repository.LogImageRepository
 import com.example.tiptracker.data.repository.LogRepository
+import com.example.tiptracker.data.repository.PlaceDetails
+import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.utils.roundToTwoDecimals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -25,6 +32,10 @@ data class LogDetailUiState(
     val partySize: Int = 1,
     val restaurantName: String = "",
     val address: String? = null,
+    // True when [address] was looked up from Google Places rather than typed by the user;
+    // it then needs Google Maps attribution and is never saved
+    val addressFromPlaces: Boolean = false,
+    val addressAttributions: List<String> = emptyList(),
     val review: String = "",
     val rating: Double = 0.0,
     val date: String = "",
@@ -49,7 +60,8 @@ sealed interface LogDetailEvent {
 class LogDetailViewModel(
     private val logId: Int,
     private val logsRepository: LogRepository,
-    private val imagesRepository: LogImageRepository
+    private val imagesRepository: LogImageRepository,
+    private val placesRepository: PlacesRepository
 ) : ViewModel() {
 
     private val _events = Channel<LogDetailEvent>()
@@ -57,6 +69,19 @@ class LogDetailViewModel(
 
     private val isDeleting = MutableStateFlow(false)
     private val logFlow = logsRepository.getLogById(logId)
+
+    // Logs linked to a Google Maps place store only its ID (Google's terms don't allow
+    // saving the address), so look the address up each time the screen is shown. Address
+    // only, so it bills at Place Details Essentials. Null while loading, offline, or unlinked.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val placeAddress: Flow<PlaceDetails?> = logFlow
+        .map { it?.placeId }
+        .distinctUntilChanged()
+        .mapLatest { placeId ->
+            placeId?.let { placesRepository.fetchPlaceDetails(it, includeName = false) }
+        }
+        .onStart { emit(null) }
+        .catch { emit(null) }
 
     val uiState: StateFlow<LogDetailUiState> = combine(
         isDeleting,
@@ -100,9 +125,18 @@ class LogDetailViewModel(
                     )
                 )
                 android.util.Log.e("LogDetailViewModel", "Error loading log detail", e)
-            }
-    ) { deleting, images, state ->
-        state.copy(isDeleting = deleting, images = images)
+            },
+        placeAddress
+    ) { deleting, images, state, place ->
+        // A typed address always wins; the Places lookup only fills in a missing one
+        val fetched = place?.takeIf { state.address == null && it.address != null }
+        state.copy(
+            isDeleting = deleting,
+            images = images,
+            address = fetched?.address ?: state.address,
+            addressFromPlaces = fetched != null,
+            addressAttributions = fetched?.attributions.orEmpty()
+        )
     }
         .stateIn(
             scope = viewModelScope,

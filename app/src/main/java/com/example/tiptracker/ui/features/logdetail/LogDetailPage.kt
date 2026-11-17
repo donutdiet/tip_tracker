@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -52,7 +53,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
@@ -62,6 +66,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
+import com.example.tiptracker.ui.components.GoogleMapsAttribution
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.ui.theme.titleSmallMono
@@ -91,6 +96,14 @@ fun LogDetailPage(
             text = uiState.restaurantName,
             style = MaterialTheme.typography.headlineMedium
         )
+        uiState.address?.let { address ->
+            Spacer(modifier = Modifier.height(4.dp))
+            LogAddress(
+                address = address,
+                fromPlaces = uiState.addressFromPlaces,
+                attributions = uiState.addressAttributions
+            )
+        }
         Spacer(modifier = Modifier.height(20.dp))
 
         LogStatsCard(
@@ -100,8 +113,7 @@ fun LogDetailPage(
             date = uiState.date,
             partySize = uiState.partySize,
             totalPerPerson = uiState.totalPerPerson,
-            tipPercent = uiState.tipPercent,
-            address = uiState.address
+            tipPercent = uiState.tipPercent
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -120,20 +132,18 @@ fun LogDetailPage(
         ) {
             Text(text = "Review", style = MaterialTheme.typography.bodyLarge)
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.star),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = uiState.rating.toString(),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
+            Text(
+                text = buildAnnotatedString {
+                    append("%.1f".format(uiState.rating))
+                    withStyle(
+                        MaterialTheme.typography.bodySmall.toSpanStyle()
+                            .copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ) {
+                        append(" / 10")
+                    }
+                },
+                style = MaterialTheme.typography.titleMedium
+            )
         }
         Text(text = uiState.review, style = MaterialTheme.typography.bodyMedium)
     }
@@ -155,8 +165,7 @@ private fun LogStatsCard(
     date: String,
     partySize: Int,
     totalPerPerson: Double,
-    tipPercent: Double,
-    address: String? = null
+    tipPercent: Double
 ) {
     Card(
         shape = RoundedCornerShape(4.dp),
@@ -256,36 +265,55 @@ private fun LogStatsCard(
                     style = MaterialTheme.typography.titleSmallMono
                 )
             }
+        }
+    }
+}
 
-            address?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                val inlineContent = mapOf(
-                    "locationIcon" to InlineTextContent(
-                        Placeholder(
-                            width = 18.sp,
-                            height = 18.sp,
-                            placeholderVerticalAlign = PlaceholderVerticalAlign.Center
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.location),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+@Composable
+private fun LogAddress(
+    address: String,
+    fromPlaces: Boolean,
+    attributions: List<String>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        val inlineContent = mapOf(
+            "locationIcon" to InlineTextContent(
+                Placeholder(
+                    width = 16.sp,
+                    height = 16.sp,
+                    placeholderVerticalAlign = PlaceholderVerticalAlign.Center
                 )
-                Text(
-                    text = buildAnnotatedString {
-                        appendInlineContent("locationIcon", "[location]")
-                        append(" ")
-                        append(it)
-                    },
-                    inlineContent = inlineContent,
-                    style = MaterialTheme.typography.titleSmallMono,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.location),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
+        )
+        Text(
+            text = buildAnnotatedString {
+                appendInlineContent("locationIcon", "[location]")
+                append(" ")
+                append(address)
+            },
+            inlineContent = inlineContent,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        // A looked-up address is Google content: show the attributions Google requires
+        if (fromPlaces) {
+            attributions.forEach { attribution ->
+                Text(
+                    // May contain HTML links
+                    text = AnnotatedString.fromHtml(attribution),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            GoogleMapsAttribution()
         }
     }
 }
@@ -468,9 +496,11 @@ private fun FullScreenImageDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    // The dialog draws edge to edge, so keep the bar clear of the status bar
+                    .statusBarsPadding()
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .align(Alignment.TopCenter)
             ) {
                 Text(
                     text = "${pagerState.currentPage + 1} / ${imageFiles.size}",
