@@ -9,7 +9,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +17,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Surface
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,80 +55,114 @@ fun SettingsPage(
 
     Column(
         modifier = modifier
-            .padding(vertical = 4.dp, horizontal = 24.dp)
+            .padding(vertical = 4.dp, horizontal = 16.dp)
             .fillMaxSize()
     ) {
-        LabeledSwitch(
-            label = "Dark Mode",
-            checked = uiState.darkMode,
-            onToggle = { onAction(SettingsAction.setDarkMode(!uiState.darkMode)) }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Tip Percent Preset 1", style = MaterialTheme.typography.labelLarge)
-            Text("${localTipPreset1Value.roundToInt()}%")
+        SettingsSection("Appearance") {
+            LabeledSwitch(
+                label = "Dark Mode",
+                checked = uiState.darkMode,
+                onToggle = { onAction(SettingsAction.setDarkMode(!uiState.darkMode)) }
+            )
         }
-        Slider(
-            value = localTipPreset1Value,
-            onValueChange = { localTipPreset1Value = it },
-            onValueChangeFinished = { onAction(SettingsAction.setTipPreset1Percent(localTipPreset1Value.roundToInt())) },
-            valueRange = 0f..50f,
-            thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
-        )
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Tip Percent Preset 2", style = MaterialTheme.typography.labelLarge)
-            Text("${localTipPreset2Value.roundToInt()}%")
-        }
-        Slider(
-            value = localTipPreset2Value,
-            onValueChange = { localTipPreset2Value = it },
-            onValueChangeFinished = { onAction(SettingsAction.setTipPreset2Percent(localTipPreset2Value.roundToInt())) },
-            valueRange = 0f..50f,
-            thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Nearby restaurant search", style = MaterialTheme.typography.labelLarge)
-                Text(
-                    text = when (locationStatus) {
-                        LocationPermissionStatus.Granted ->
-                            "On. Your approximate location is used to show nearby places first."
-                        LocationPermissionStatus.CanRequest ->
-                            "Allow approximate location to show nearby places first."
-                        LocationPermissionStatus.SettingsRequired ->
-                            "Off. Location can be enabled in system settings."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        SettingsSection("Tip presets") {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Tip Percent Preset 1", style = MaterialTheme.typography.labelLarge)
+                Text("${localTipPreset1Value.roundToInt()}%")
             }
-            TextButton(onClick = onLocationClick) {
-                Text(
-                    text = when (locationStatus) {
-                        LocationPermissionStatus.Granted -> "Manage"
-                        LocationPermissionStatus.CanRequest -> "Enable"
-                        LocationPermissionStatus.SettingsRequired -> "Open settings"
-                    },
-                    style = MaterialTheme.typography.labelLarge
-                )
+            Slider(
+                value = localTipPreset1Value,
+                onValueChange = { localTipPreset1Value = it },
+                onValueChangeFinished = { onAction(SettingsAction.setTipPreset1Percent(localTipPreset1Value.roundToInt())) },
+                valueRange = 0f..50f,
+                thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Tip Percent Preset 2", style = MaterialTheme.typography.labelLarge)
+                Text("${localTipPreset2Value.roundToInt()}%")
             }
+            Slider(
+                value = localTipPreset2Value,
+                onValueChange = { localTipPreset2Value = it },
+                onValueChangeFinished = { onAction(SettingsAction.setTipPreset2Percent(localTipPreset2Value.roundToInt())) },
+                valueRange = 0f..50f,
+                thumb = { CustomThumb(MaterialTheme.colorScheme.primary) }
+            )
         }
+
+        // No inner padding: the row pads itself so its tap ripple fills the box
+        SettingsSection("Restaurant search", contentPadding = PaddingValues(0.dp)) {
+            LocationSettingRow(status = locationStatus, onClick = onLocationClick)
+        }
+    }
+}
+
+/** A titled group of settings on a tinted box (the same surface as the linked-place box). */
+@Composable
+private fun SettingsSection(
+    title: String,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 6.dp)
+    )
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraSmall,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(contentPadding), content = content)
+    }
+}
+
+/**
+ * Standard settings switch row: the switch shows whether the permission is granted. Tapping
+ * asks for it when Android still allows that; otherwise (already on, or blocked after
+ * denials) it opens the app's system settings, the only place it can be changed.
+ */
+@Composable
+private fun LocationSettingRow(status: LocationPermissionStatus, onClick: () -> Unit) {
+    val granted = status == LocationPermissionStatus.Granted
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = granted,
+                role = Role.Switch,
+                onValueChange = { onClick() }
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Nearby restaurants", style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = if (status == LocationPermissionStatus.SettingsRequired) {
+                    "Location access is blocked. Tap to allow it in system settings."
+                } else {
+                    "Show places near you first, using your approximate location."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        // The row handles the tap so the whole row is the touch target
+        Switch(checked = granted, onCheckedChange = null)
     }
 }
 
