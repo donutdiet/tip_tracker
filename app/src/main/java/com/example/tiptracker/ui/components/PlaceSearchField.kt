@@ -80,7 +80,7 @@ fun PlaceSearchField(
     val searching = selectedPlace == null
     val supportingText = when {
         searching && searchFailed -> "Couldn't load suggestions. You can still type the name."
-        searching && isOffline -> "Restaurant search isn't available offline. Enter the name manually."
+        searching && isOffline -> "Restaurant search isn't available offline."
         address.isNotEmpty() -> address
         else -> null
     }
@@ -128,7 +128,8 @@ fun PlaceSearchField(
 
             ExposedDropdownMenu(
                 expanded = showSuggestions,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
             ) {
                 predictions.forEach { prediction ->
                     DropdownMenuItem(
@@ -158,7 +159,7 @@ fun PlaceSearchField(
                 // Required by the Places policies: predictions aren't shown on a Google map
                 HorizontalDivider()
                 GoogleMapsAttribution(
-                    background = MaterialTheme.colorScheme.surfaceContainer,
+                    background = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)

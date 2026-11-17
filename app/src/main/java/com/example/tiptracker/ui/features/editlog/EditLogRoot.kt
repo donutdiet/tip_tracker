@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tiptracker.R
+import com.example.tiptracker.ui.components.ConfirmationDialog
 import com.example.tiptracker.utils.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -59,30 +59,19 @@ fun EditLogRoot(
     }
 
     if (showDiscardChangesDialog) {
-        AlertDialog(
-            onDismissRequest = { showDiscardChangesDialog = false },
-            title = { Text(text = "Discard changes?", style = MaterialTheme.typography.titleMedium) },
-            text = {
-                Text(
-                    text = "You have unsaved changes. Are you sure you want to go back?",
-                    style = MaterialTheme.typography.bodySmall
-                )
+        ConfirmationDialog(
+            title = "Discard changes?",
+            message = "Your edits to this log haven't been saved and will be lost.",
+            confirmText = "Discard",
+            dismissText = "Keep editing",
+            onConfirm = {
+                showDiscardChangesDialog = false
+                onBack()
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDiscardChangesDialog = false
-                        onBack()
-                    }
-                ) {
-                    Text(text = "Discard", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDiscardChangesDialog = false }) {
-                    Text(text = "Keep Editing", color = MaterialTheme.colorScheme.onSurface)
-                }
-            }
+            onDismiss = { showDiscardChangesDialog = false },
+            icon = R.drawable.edit,
+            destructive = true,
+            destructiveIcon = false
         )
     }
 
