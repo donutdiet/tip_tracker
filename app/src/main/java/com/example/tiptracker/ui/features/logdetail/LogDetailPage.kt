@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -95,6 +94,14 @@ fun LogDetailPage(
             text = uiState.restaurantName,
             style = MaterialTheme.typography.headlineMedium
         )
+        uiState.address?.let { address ->
+            Spacer(modifier = Modifier.height(4.dp))
+            LogAddress(
+                address = address,
+                fromPlaces = uiState.addressFromPlaces,
+                attributions = uiState.addressAttributions
+            )
+        }
         Spacer(modifier = Modifier.height(20.dp))
 
         LogStatsCard(
@@ -104,10 +111,7 @@ fun LogDetailPage(
             date = uiState.date,
             partySize = uiState.partySize,
             totalPerPerson = uiState.totalPerPerson,
-            tipPercent = uiState.tipPercent,
-            address = uiState.address,
-            addressFromPlaces = uiState.addressFromPlaces,
-            addressAttributions = uiState.addressAttributions
+            tipPercent = uiState.tipPercent
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -161,10 +165,7 @@ private fun LogStatsCard(
     date: String,
     partySize: Int,
     totalPerPerson: Double,
-    tipPercent: Double,
-    address: String? = null,
-    addressFromPlaces: Boolean = false,
-    addressAttributions: List<String> = emptyList()
+    tipPercent: Double
 ) {
     Card(
         shape = RoundedCornerShape(4.dp),
@@ -264,54 +265,55 @@ private fun LogStatsCard(
                     style = MaterialTheme.typography.titleSmallMono
                 )
             }
+        }
+    }
+}
 
-            address?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                val inlineContent = mapOf(
-                    "locationIcon" to InlineTextContent(
-                        Placeholder(
-                            width = 18.sp,
-                            height = 18.sp,
-                            placeholderVerticalAlign = PlaceholderVerticalAlign.Center
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.location),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+@Composable
+private fun LogAddress(
+    address: String,
+    fromPlaces: Boolean,
+    attributions: List<String>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        val inlineContent = mapOf(
+            "locationIcon" to InlineTextContent(
+                Placeholder(
+                    width = 16.sp,
+                    height = 16.sp,
+                    placeholderVerticalAlign = PlaceholderVerticalAlign.Center
                 )
-                Text(
-                    text = buildAnnotatedString {
-                        appendInlineContent("locationIcon", "[location]")
-                        append(" ")
-                        append(it)
-                    },
-                    inlineContent = inlineContent,
-                    style = MaterialTheme.typography.titleSmallMono,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.location),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxSize()
                 )
-                // A looked-up address is Google content: show the attributions Google requires
-                if (addressFromPlaces) {
-                    addressAttributions.forEach { attribution ->
-                        Text(
-                            // May contain HTML links
-                            text = AnnotatedString.fromHtml(attribution),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    GoogleMapsAttribution(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentWidth(Alignment.End)
-                    )
-                }
             }
+        )
+        Text(
+            text = buildAnnotatedString {
+                appendInlineContent("locationIcon", "[location]")
+                append(" ")
+                append(address)
+            },
+            inlineContent = inlineContent,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        // A looked-up address is Google content: show the attributions Google requires
+        if (fromPlaces) {
+            attributions.forEach { attribution ->
+                Text(
+                    // May contain HTML links
+                    text = AnnotatedString.fromHtml(attribution),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            GoogleMapsAttribution()
         }
     }
 }
