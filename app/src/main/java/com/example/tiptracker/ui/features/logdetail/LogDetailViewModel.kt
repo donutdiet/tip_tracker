@@ -3,6 +3,8 @@ package com.example.tiptracker.ui.features.logdetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.LogImage
+import com.example.tiptracker.data.entity.totalPerPerson
+import com.example.tiptracker.data.model.BillType
 import com.example.tiptracker.data.repository.LogImageRepository
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.PlaceDetails
@@ -30,6 +32,7 @@ data class LogDetailUiState(
     val tipPercent: Double = 0.0,
     val total: Double = 0.0,
     val partySize: Int = 1,
+    val billType: BillType = BillType.SPLIT,
     val restaurantName: String = "",
     val address: String? = null,
     // True when [address] was looked up from Google Places rather than typed by the user;
@@ -95,25 +98,20 @@ class LogDetailViewModel(
                     )
                 } else {
                     val tipAmount = (log.total - log.bill).roundToTwoDecimals()
-                    val totalPerPerson = if (log.partySize > 0) {
-                        (log.total / log.partySize).roundToTwoDecimals()
-                    } else {
-                        0.0
-                    }
-
                     LogDetailUiState(
                         isLoading = false,
                         bill = log.bill,
                         tipPercent = log.tipPercent,
                         total = log.total,
                         partySize = log.partySize,
+                        billType = log.billType,
                         restaurantName = log.restaurantName,
                         address = log.address,
                         review = log.review,
                         rating = log.rating,
                         date = log.date,
                         tipAmount = tipAmount,
-                        totalPerPerson = totalPerPerson
+                        totalPerPerson = log.totalPerPerson.roundToTwoDecimals()
                     )
                 }
             }

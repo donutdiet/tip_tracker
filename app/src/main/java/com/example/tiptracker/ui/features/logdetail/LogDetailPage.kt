@@ -66,6 +66,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
+import com.example.tiptracker.data.model.BillType
 import com.example.tiptracker.ui.components.GoogleMapsAttribution
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
@@ -112,6 +113,7 @@ fun LogDetailPage(
             total = uiState.total,
             date = uiState.date,
             partySize = uiState.partySize,
+            billType = uiState.billType,
             totalPerPerson = uiState.totalPerPerson,
             tipPercent = uiState.tipPercent
         )
@@ -164,6 +166,7 @@ private fun LogStatsCard(
     total: Double,
     date: String,
     partySize: Int,
+    billType: BillType,
     totalPerPerson: Double,
     tipPercent: Double
 ) {
@@ -191,7 +194,8 @@ private fun LogStatsCard(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "$partySize",
+                        // Separate checks: the amounts below are only the user's own check
+                        text = if (billType == BillType.SEPARATE) "$partySize · Separate" else "$partySize",
                         style = MaterialTheme.typography.titleSmallMono,
                         modifier = Modifier.offset(y = 1.dp)
                     )

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.helper.LocationProvider
+import com.example.tiptracker.data.model.BillType
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogRepository
@@ -29,6 +30,7 @@ data class EditLogUiState(
     val bill: String = "",
     val tipAmount: String = "",
     val partySize: String = "",
+    val billType: BillType = BillType.SPLIT,
     // Exactly what the user typed; this is the name that gets saved
     val restaurantName: String = "",
     // Free-text address typed in an older version of the app (never a Google address)
@@ -66,12 +68,17 @@ data class EditLogUiState(
             val tipAmountDouble = tipAmount.toDoubleOrNull() ?: 0.0
             return (billAmount + tipAmountDouble).roundToTwoDecimals()
         }
+
+    // Split vs separate only matters with more than one person
+    val billTypeApplies: Boolean
+        get() = (partySize.toIntOrNull() ?: 0) > 1
 }
 
 sealed interface EditLogAction {
     data class BillChanged(val bill: String) : EditLogAction
     data class TipAmountChanged(val tipAmount: String) : EditLogAction
     data class PartySizeChanged(val partySize: String) : EditLogAction
+    data class BillTypeChanged(val billType: BillType) : EditLogAction
     data class RestaurantQueryChanged(val query: String) : EditLogAction
     data class PlaceSelected(val prediction: PlacePrediction) : EditLogAction
     data object ClearPlace : EditLogAction
@@ -137,6 +144,7 @@ class EditLogViewModel(
             is EditLogAction.BillChanged -> edit { it.copy(bill = action.bill) }
             is EditLogAction.TipAmountChanged -> edit { it.copy(tipAmount = action.tipAmount) }
             is EditLogAction.PartySizeChanged -> edit { it.copy(partySize = action.partySize) }
+            is EditLogAction.BillTypeChanged -> edit { it.copy(billType = action.billType) }
             is EditLogAction.RestaurantQueryChanged -> onRestaurantQueryChange(action.query)
             is EditLogAction.PlaceSelected -> onPlaceSelected(action.prediction)
             EditLogAction.ClearPlace -> clearPlace()
@@ -202,6 +210,7 @@ class EditLogViewModel(
                     bill = log.bill.toString(),
                     tipAmount = (log.total - log.bill).roundToTwoDecimals().toString(),
                     partySize = log.partySize.toString(),
+                    billType = log.billType,
                     restaurantName = log.restaurantName,
                     address = log.address ?: "",
                     selectedPlace = log.placeId?.let { SelectedPlace(it) },
@@ -279,6 +288,8 @@ class EditLogViewModel(
                         tipPercent = state.tipPercent,
                         total = state.total,
                         partySize = partySize,
+                        // The toggle is hidden for a party of one, so don't keep a stale choice
+                        billType = if (partySize > 1) state.billType else BillType.SPLIT,
                         restaurantName = state.restaurantName,
                         address = address,
                         review = state.review,
@@ -304,6 +315,7 @@ class EditLogViewModel(
         return state.bill != initial.bill ||
                 state.tipAmount != initial.tipAmount ||
                 state.partySize != initial.partySize ||
+                state.billType != initial.billType ||
                 state.restaurantName != initial.restaurantName ||
                 state.address != initial.address ||
                 state.selectedPlace?.placeId != initial.selectedPlace?.placeId ||
