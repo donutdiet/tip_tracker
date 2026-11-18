@@ -85,6 +85,44 @@ class MigrationTest {
     }
 
     @Test
+    fun migrate4To5_defaultsExistingLogsToSplit() {
+        helper.createDatabase(TEST_DB, 4).apply {
+            execSQL(
+                "INSERT INTO log (id, bill, tip_percent, total, party_size, restaurant_name, " +
+                        "address, review, rating, date) VALUES " +
+                        "(1, 80.0, 20.0, 96.0, 4, 'The Pearl', NULL, 'Great', 8.5, '2026-03-21')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 5, true)
+
+        db.query("SELECT bill_type, total, party_size FROM log WHERE id = 1").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("SPLIT", cursor.getString(0))
+            assertEquals(96.0, cursor.getDouble(1), 0.0)
+            assertEquals(4, cursor.getInt(2))
+        }
+    }
+
+    @Test
+    fun migrate4To5_acceptsSeparateBillType() {
+        helper.createDatabase(TEST_DB, 4).close()
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 5, true)
+        db.execSQL(
+            "INSERT INTO log (bill, tip_percent, total, party_size, bill_type, restaurant_name, " +
+                    "review, rating, date) VALUES " +
+                    "(25.0, 20.0, 30.0, 4, 'SEPARATE', 'Juniper', '', 7.0, '2026-04-01')"
+        )
+
+        db.query("SELECT bill_type FROM log WHERE restaurant_name = 'Juniper'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("SEPARATE", cursor.getString(0))
+        }
+    }
+
+    @Test
     fun migrateFromVersion1ToLatest_keepsData() {
         helper.createDatabase(TEST_DB, 1).apply {
             execSQL(
@@ -95,7 +133,7 @@ class MigrationTest {
             close()
         }
 
-        val db = helper.runMigrationsAndValidate(TEST_DB, 4, true)
+        val db = helper.runMigrationsAndValidate(TEST_DB, 5, true)
 
         db.query("SELECT restaurant_name, address, place_id FROM log WHERE id = 1").use { cursor ->
             assertTrue(cursor.moveToFirst())

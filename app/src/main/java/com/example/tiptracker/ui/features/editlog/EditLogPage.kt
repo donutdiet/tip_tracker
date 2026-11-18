@@ -31,6 +31,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
+import com.example.tiptracker.data.model.BillType
+import com.example.tiptracker.ui.components.BillTypeSelector
 import com.example.tiptracker.ui.components.DateRatingCard
 import com.example.tiptracker.ui.components.PlaceSearchField
 import com.example.tiptracker.ui.theme.TipTrackerTheme
@@ -136,24 +138,40 @@ fun EditLogPage(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        OutlinedTextField(
-            value = uiState.partySize,
-            onValueChange = { onAction(EditLogAction.PartySizeChanged(it)) },
-            label = { Text("Party Size") },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Next
-            ),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.person),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            singleLine = true,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top,
             modifier = Modifier.fillMaxWidth()
-        )
+        ) {
+            OutlinedTextField(
+                value = uiState.partySize,
+                onValueChange = { onAction(EditLogAction.PartySizeChanged(it)) },
+                // "Party Size" wraps to two lines at this width and misaligns the row
+                label = { Text("Party") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.person),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                singleLine = true,
+                modifier = Modifier.weight(2f)
+            )
+            BillTypeSelector(
+                selected = uiState.billType,
+                onSelect = { onAction(EditLogAction.BillTypeChanged(it)) },
+                enabled = uiState.billTypeApplies,
+                supportingText = if (uiState.billTypeApplies && uiState.billType == BillType.SEPARATE) {
+                    { Text("Bill and tip are only yours") }
+                } else null,
+                modifier = Modifier.weight(3f)
+            )
+        }
 
         PlaceSearchField(
             query = uiState.restaurantName,

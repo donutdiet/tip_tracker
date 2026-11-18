@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.helper.LocationProvider
+import com.example.tiptracker.data.model.BillType
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogRepository
@@ -36,6 +37,7 @@ data class HomeUiState(
     val tipPreset2: Boolean = false,
     val tipPercent: String = "",
     val partySize: String = "",
+    val billType: BillType = BillType.SPLIT,
     val roundUpTip: Boolean = false,
     val roundUpTotal: Boolean = false,
     // Exactly what the user typed; this is the name that gets saved
@@ -100,6 +102,10 @@ data class HomeUiState(
             return (100 * tipAmount / (total - tipAmount)).roundToTwoDecimals()
         }
 
+    // Split vs separate only matters with more than one person
+    val billTypeApplies: Boolean
+        get() = (partySize.toIntOrNull() ?: 0) > 1
+
     val formattedTipAmount: String
         get() = formatCurrency(tipAmount)
 
@@ -123,6 +129,7 @@ sealed interface HomeAction {
     data object onTipPreset2Toggle : HomeAction
     data class onTipPercentChange(val tipPercent: String) : HomeAction
     data class onPartySizeChange(val partySize: String) : HomeAction
+    data class onBillTypeChange(val billType: BillType) : HomeAction
     data object onRoundUpTipToggle : HomeAction
     data object onRoundUpTotalToggle : HomeAction
     data class onRestaurantQueryChange(val query: String) : HomeAction
@@ -220,6 +227,7 @@ class HomeViewModel(
             }
 
             is HomeAction.onPartySizeChange -> _uiState.update { it.copy(partySize = action.partySize) }
+            is HomeAction.onBillTypeChange -> _uiState.update { it.copy(billType = action.billType) }
             is HomeAction.onRoundUpTipToggle -> {
                 _uiState.update {
                     it.copy(roundUpTip = !it.roundUpTip, roundUpTotal = false)
@@ -301,6 +309,8 @@ class HomeViewModel(
                     tipPercent = state.trueTipPercent,
                     total = state.total,
                     partySize = partySize,
+                    // The toggle is hidden for a party of one, so don't keep a stale choice
+                    billType = if (partySize > 1) state.billType else BillType.SPLIT,
                     // Google's terms allow storing only the place ID: the name is the user's own
                     // text, and the place's address is never saved
                     restaurantName = state.restaurantName,

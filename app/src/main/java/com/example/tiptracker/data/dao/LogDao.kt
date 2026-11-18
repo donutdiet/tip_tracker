@@ -26,17 +26,20 @@ interface LogDao {
     @Query("DELETE FROM log WHERE id = :id")
     suspend fun deleteLogById(id: Int): Int
 
-    // Stats profile section
+    // Stats profile section. Bill, total and tip are whole-party amounts, so a separate check
+    // (the user's own check only) is extrapolated to the party by assuming everyone spent the
+    // same, the same assumption a split bill makes in reverse. Per person uses the
+    // Log.totalPerPerson rule.
     @Query("""
         SELECT
             COUNT(*) as totalLogs,
-            ROUND(AVG(bill), 2) as avgBill,
+            ROUND(AVG(CASE WHEN bill_type = 'SEPARATE' THEN bill * party_size ELSE bill END), 2) as avgBill,
             ROUND(AVG(tip_percent), 2) as avgTipPercent,
-            ROUND(AVG(total), 2) as avgTotal,
+            ROUND(AVG(CASE WHEN bill_type = 'SEPARATE' THEN total * party_size ELSE total END), 2) as avgTotal,
             ROUND(AVG(party_size), 2) as avgPartySize,
             ROUND(AVG(rating), 2) as avgRating,
-            ROUND(AVG(total - bill), 2) as avgTipAmount,
-            ROUND(AVG(total / party_size), 2) as avgTotalPerPerson
+            ROUND(AVG(CASE WHEN bill_type = 'SEPARATE' THEN (total - bill) * party_size ELSE total - bill END), 2) as avgTipAmount,
+            ROUND(AVG(CASE WHEN bill_type = 'SEPARATE' THEN total ELSE total / party_size END), 2) as avgTotalPerPerson
         FROM log
     """)
     fun getLogStats(): Flow<LogStats>
@@ -45,8 +48,12 @@ interface LogDao {
     @Query("SELECT rating, COUNT(*) as count from log GROUP BY rating ORDER BY rating")
     fun getRatingDistribution(): Flow<List<RatingCount>>
 
-    // Awards
-    @Query("SELECT * FROM log ORDER BY (bill / party_size) DESC LIMIT 1")
+    // Awards. Ranks by the same per-person total the award displays (Log.totalPerPerson).
+    @Query("""
+        SELECT * FROM log
+        ORDER BY CASE WHEN bill_type = 'SEPARATE' THEN total ELSE total / party_size END DESC
+        LIMIT 1
+    """)
     fun getHighestSpendPerPersonLog(): Flow<Log?>
 
     @Query("SELECT * FROM log ORDER BY tip_percent DESC LIMIT 1")

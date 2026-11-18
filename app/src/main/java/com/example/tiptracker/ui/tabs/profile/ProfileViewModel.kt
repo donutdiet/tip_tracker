@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.R
 import com.example.tiptracker.data.entity.Log
+import com.example.tiptracker.data.entity.totalPerPerson
 import com.example.tiptracker.data.model.LogStats
 import com.example.tiptracker.data.model.RatingCount
 import com.example.tiptracker.data.repository.LogRepository
@@ -35,7 +36,7 @@ data class AwardsUiState(
             Award(
                 title = "Highest Spend Per Person",
                 log = it,
-                metric = "$${formatCurrency((it.total / it.partySize).roundToTwoDecimals())}/ea"
+                metric = "$${formatCurrency(it.totalPerPerson.roundToTwoDecimals())}/ea"
             )
         },
         mostGenerousTip?.let {

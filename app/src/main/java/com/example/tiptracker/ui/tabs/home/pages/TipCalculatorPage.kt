@@ -47,6 +47,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
+import com.example.tiptracker.data.model.BillType
+import com.example.tiptracker.ui.components.BillTypeSelector
 import com.example.tiptracker.ui.tabs.home.HomeAction
 import com.example.tiptracker.ui.tabs.home.HomeUiState
 import com.example.tiptracker.ui.theme.TipTrackerTheme
@@ -164,44 +166,64 @@ fun TipCalculatorPage(
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = uiState.partySize,
-            onValueChange = { onAction(HomeAction.onPartySizeChange(it)) },
-            label = {
-                Text("Party Size", style = MaterialTheme.typography.titleSmall)
-            },
-            supportingText = {
-                if ((uiState.partySize.toIntOrNull() ?: 0) > 1) {
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                style = MaterialTheme.typography.titleMediumMono.toSpanStyle()
-                            ) {
-                                append("$${uiState.formattedTotalPerPerson}")
-                            }
-                            append(" per person")
-                        },
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            },
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { focusManager.clearFocus() }
-            ),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.person),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            singleLine = true,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Top,
             modifier = Modifier.fillMaxWidth()
-        )
+        ) {
+            OutlinedTextField(
+                value = uiState.partySize,
+                onValueChange = { onAction(HomeAction.onPartySizeChange(it)) },
+                // "Party Size" wraps to two lines at this width and misaligns the row
+                label = {
+                    Text("Party", style = MaterialTheme.typography.titleSmall)
+                },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() }
+                ),
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.person),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                singleLine = true,
+                modifier = Modifier.weight(2f)
+            )
+            BillTypeSelector(
+                selected = uiState.billType,
+                onSelect = { onAction(HomeAction.onBillTypeChange(it)) },
+                enabled = uiState.billTypeApplies,
+                supportingText = if (uiState.billTypeApplies) {
+                    {
+                        if (uiState.billType == BillType.SEPARATE) {
+                            Text(
+                                text = "Enter only your check",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        } else {
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = MaterialTheme.typography.titleMediumMono.toSpanStyle()
+                                    ) {
+                                        append("$${uiState.formattedTotalPerPerson}")
+                                    }
+                                    append(" each")
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                } else null,
+                modifier = Modifier.weight(3f)
+            )
+        }
         Spacer(modifier = Modifier.height(28.dp))
 
         Row(
