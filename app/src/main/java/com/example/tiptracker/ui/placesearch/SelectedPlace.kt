@@ -10,8 +10,10 @@ import com.example.tiptracker.data.repository.PlacePrediction
  */
 data class SelectedPlace(
     val placeId: String,
-    // Null while being looked up, or if the lookup failed (see [lookupFailed])
+    // From the picked suggestion. Null for a place looked up when a saved log is opened:
+    // that lookup asks for the address only, since the name would bill at a higher rate.
     val name: String? = null,
+    // Null while being looked up, or if the lookup failed (see [lookupFailed])
     val address: String? = null,
     // Third-party credits Google requires next to looked-up details; may contain HTML links
     val attributions: List<String> = emptyList(),
@@ -25,7 +27,7 @@ data class SelectedPlace(
             if (details == null) {
                 SelectedPlace(placeId, lookupFailed = true)
             } else {
-                SelectedPlace(placeId, details.name, details.address, details.attributions)
+                SelectedPlace(placeId, address = details.address, attributions = details.attributions)
             }
     }
 }

@@ -52,9 +52,6 @@ import com.example.tiptracker.utils.rememberLocationPermissionPrompt
  * gets saved; picking a suggestion only links the log to that place ([selectedPlace]), whose
  * official name and address are shown below for reference. Typing never unlinks the place;
  * the Clear button does. Offline (or if a search fails) it is just a free-text field.
- *
- * @param address a free-text address the user entered in an older version of the app, shown
- *   when no place is linked.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +67,6 @@ fun PlaceSearchField(
     modifier: Modifier = Modifier,
     // Called when the field gains focus with no place linked; may search the current text
     onFocused: () -> Unit = {},
-    address: String = "",
     imeAction: ImeAction = ImeAction.Next
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -83,7 +79,6 @@ fun PlaceSearchField(
     val supportingText = when {
         searching && searchFailed -> "Couldn't load suggestions. You can still type the name."
         searching && isOffline -> "Restaurant search isn't available offline."
-        address.isNotEmpty() -> address
         else -> null
     }
 

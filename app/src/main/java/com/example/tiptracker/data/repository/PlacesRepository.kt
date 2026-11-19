@@ -30,7 +30,6 @@ data class PlacePrediction(
  * to be shown alongside it, and may contain HTML links.
  */
 data class PlaceDetails(
-    val name: String?,
     val address: String?,
     val attributions: List<String> = emptyList()
 )
@@ -121,26 +120,21 @@ class PlacesRepository(private val context: Context) {
     }
 
     /**
-     * Current details of [placeId] for display, or null on any failure (offline, quota, ...).
+     * Current address of [placeId] for display, or null on any failure (offline, quota, ...).
      * Never persist the result or keep it beyond the screen showing it (Google's terms).
-     * The address alone bills at Place Details Essentials; adding the name ([includeName])
-     * bills the whole request at Pro, so only ask for it where it's shown.
+     * Address only, so it bills at Place Details Essentials; adding DISPLAY_NAME would bill
+     * the whole request at Pro.
      * No session token: this is a standalone lookup, not the end of an autocomplete search.
      */
-    suspend fun fetchPlaceDetails(placeId: String, includeName: Boolean): PlaceDetails? {
+    suspend fun fetchPlaceDetails(placeId: String): PlaceDetails? {
         val client = client ?: return null
         val cancellation = CancellationTokenSource()
         return try {
-            val fields = buildList {
-                add(Place.Field.FORMATTED_ADDRESS)
-                if (includeName) add(Place.Field.DISPLAY_NAME)
-            }
-            val request = FetchPlaceRequest.builder(placeId, fields)
+            val request = FetchPlaceRequest.builder(placeId, listOf(Place.Field.FORMATTED_ADDRESS))
                 .setCancellationToken(cancellation.token)
                 .build()
             val place = client.fetchPlace(request).await(cancellation).place
             PlaceDetails(
-                name = place.displayName,
                 address = place.formattedAddress,
                 attributions = place.attributions.orEmpty()
             )

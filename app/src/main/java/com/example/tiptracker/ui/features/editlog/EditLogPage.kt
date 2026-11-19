@@ -175,7 +175,6 @@ fun EditLogPage(
 
         PlaceSearchField(
             query = uiState.restaurantName,
-            address = uiState.address,
             predictions = uiState.predictions,
             selectedPlace = uiState.selectedPlace,
             isOffline = uiState.isOffline,
@@ -236,7 +235,6 @@ fun EditLogPagePreview() {
                 tipAmount = "25.62",
                 partySize = "2",
                 restaurantName = "The Pearl",
-                address = "address",
                 review = "Great food and service.",
                 date = "2026-03-21",
                 rating = 8.6,

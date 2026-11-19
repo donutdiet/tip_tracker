@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 data class EditLogUiState(
     val bill: String = "",
@@ -33,8 +34,6 @@ data class EditLogUiState(
     val billType: BillType = BillType.SPLIT,
     // Exactly what the user typed; this is the name that gets saved
     val restaurantName: String = "",
-    // Free-text address typed in an older version of the app (never a Google address)
-    val address: String = "",
     // The linked Google Maps place, if any. Only its ID is saved; the rest is looked up.
     val selectedPlace: SelectedPlace? = null,
     val latitude: Double? = null,
@@ -216,7 +215,6 @@ class EditLogViewModel(
                     partySize = log.partySize.toString(),
                     billType = log.billType,
                     restaurantName = log.restaurantName,
-                    address = log.address ?: "",
                     selectedPlace = log.placeId?.let { SelectedPlace(it) },
                     latitude = log.latitude,
                     longitude = log.longitude,
@@ -251,11 +249,11 @@ class EditLogViewModel(
         placeSearch.onPlaceCleared(_uiState.value.restaurantName)
     }
 
-    // Only the place ID is stored (Google's terms), so look up the official name and address
-    // each time the screen opens. Includes the name, so this bills at Place Details Pro.
+    // Only the place ID is stored (Google's terms), so look up the address once when the
+    // screen opens (Place Details Essentials). The name isn't requested: it would bill at Pro.
     private fun loadPlaceDetails(placeId: String) {
         viewModelScope.launch {
-            val details = placesRepository.fetchPlaceDetails(placeId, includeName = true)
+            val details = placesRepository.fetchPlaceDetails(placeId)
             _uiState.update {
                 // Skip if the user cleared or changed the place meanwhile
                 if (it.selectedPlace?.placeId == placeId) {
@@ -272,14 +270,11 @@ class EditLogViewModel(
             _uiState.update { it.copy(isUpdating = true) }
             try {
                 // Give an in-flight coordinates lookup a moment; save without them if it's slow
-                withTimeoutOrNull(COORDINATES_WAIT_MS) { coordinatesJob?.join() }
+                withTimeoutOrNull(COORDINATES_WAIT_MS.milliseconds) { coordinatesJob?.join() }
                 val state = _uiState.value
                 val bill = state.bill.toDoubleOrNull() ?: 0.0
                 val tipAmount = state.tipAmount.toDoubleOrNull() ?: 0.0
                 val partySize = state.partySize.toIntOrNull() ?: 1
-                // Only the user's own typed address (from older versions) is kept; a place's
-                // address is Google content and never saved
-                val address = state.address.ifEmpty { null }
 
                 if (bill < 0.0 || tipAmount < 0.0 || partySize < 1) {
                     _events.send(EditLogEvent.ShowError("Please enter a valid bill, tip amount, and party size."))
@@ -296,7 +291,9 @@ class EditLogViewModel(
                         // The toggle is hidden for a party of one, so don't keep a stale choice
                         billType = if (partySize > 1) state.billType else BillType.SPLIT,
                         restaurantName = state.restaurantName,
-                        address = address,
+                        // Addresses are no longer shown or entered (Google's terms don't allow
+                        // saving a place's), so any old typed one is cleared on save
+                        address = null,
                         review = state.review,
                         rating = state.rating,
                         date = state.date,
@@ -322,7 +319,6 @@ class EditLogViewModel(
                 state.partySize != initial.partySize ||
                 state.billType != initial.billType ||
                 state.restaurantName != initial.restaurantName ||
-                state.address != initial.address ||
                 state.selectedPlace?.placeId != initial.selectedPlace?.placeId ||
                 state.review != initial.review ||
                 state.date != initial.date ||

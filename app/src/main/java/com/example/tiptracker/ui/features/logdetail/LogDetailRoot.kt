@@ -154,7 +154,8 @@ fun LogDetailRoot(
         LogDetailPage(
             uiState = uiState,
             imageFiles = imageFiles,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            onShowPlaceAddress = { viewModel.onAction(LogDetailAction.ShowPlaceAddress) }
         )
     }
 
