@@ -61,6 +61,7 @@ fun ReviewPage(
             onQueryChange = { onAction(HomeAction.onRestaurantQueryChange(it)) },
             onPlaceSelected = { onAction(HomeAction.onPlaceSelected(it)) },
             onClearPlace = { onAction(HomeAction.onClearPlace) },
+            onFocused = { onAction(HomeAction.onRestaurantFieldFocus) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))

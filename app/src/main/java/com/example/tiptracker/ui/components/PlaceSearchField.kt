@@ -68,6 +68,8 @@ fun PlaceSearchField(
     onPlaceSelected: (PlacePrediction) -> Unit,
     onClearPlace: () -> Unit,
     modifier: Modifier = Modifier,
+    // Called when the field gains focus with no place linked; may search the current text
+    onFocused: () -> Unit = {},
     address: String = "",
     imeAction: ImeAction = ImeAction.Next
 ) {
@@ -118,8 +120,12 @@ fun PlaceSearchField(
                     .onFocusChanged { focus ->
                         if (focus.isFocused) {
                             if (!isOffline) promptForLocation()
-                            // Reopen any suggestions from earlier typing
-                            if (selectedPlace == null) expanded = true
+                            // Reopen suggestions from earlier typing, fetching them again
+                            // if they were cleared (e.g. while offline)
+                            if (selectedPlace == null) {
+                                expanded = true
+                                onFocused()
+                            }
                         } else {
                             expanded = false
                         }

@@ -82,6 +82,7 @@ sealed interface EditLogAction {
     data class RestaurantQueryChanged(val query: String) : EditLogAction
     data class PlaceSelected(val prediction: PlacePrediction) : EditLogAction
     data object ClearPlace : EditLogAction
+    data object RestaurantFieldFocused : EditLogAction
     data class ReviewChanged(val review: String) : EditLogAction
     data class DateChanged(val date: String) : EditLogAction
     data class RatingChanged(val rating: Double) : EditLogAction
@@ -148,6 +149,9 @@ class EditLogViewModel(
             is EditLogAction.RestaurantQueryChanged -> onRestaurantQueryChange(action.query)
             is EditLogAction.PlaceSelected -> onPlaceSelected(action.prediction)
             EditLogAction.ClearPlace -> clearPlace()
+            EditLogAction.RestaurantFieldFocused -> {
+                if (_uiState.value.selectedPlace == null) placeSearch.onFocus()
+            }
             is EditLogAction.ReviewChanged -> edit { it.copy(review = action.review) }
             is EditLogAction.DateChanged -> edit { it.copy(date = action.date) }
             is EditLogAction.RatingChanged -> edit { it.copy(rating = action.rating) }
@@ -242,8 +246,9 @@ class EditLogViewModel(
     private fun clearPlace() {
         coordinatesJob?.cancel()
         edit { it.copy(selectedPlace = null, latitude = null, longitude = null) }
-        // Search the current text again so suggestions come back without retyping
-        placeSearch.onQueryChange(_uiState.value.restaurantName)
+        // Brings suggestions back: the ones picked from if the name is unchanged (free),
+        // otherwise a new search
+        placeSearch.onPlaceCleared(_uiState.value.restaurantName)
     }
 
     // Only the place ID is stored (Google's terms), so look up the official name and address

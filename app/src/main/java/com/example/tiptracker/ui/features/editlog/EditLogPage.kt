@@ -183,6 +183,7 @@ fun EditLogPage(
             onQueryChange = { onAction(EditLogAction.RestaurantQueryChanged(it)) },
             onPlaceSelected = { onAction(EditLogAction.PlaceSelected(it)) },
             onClearPlace = { onAction(EditLogAction.ClearPlace) },
+            onFocused = { onAction(EditLogAction.RestaurantFieldFocused) },
             modifier = Modifier.fillMaxWidth()
         )
 
