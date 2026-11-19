@@ -19,12 +19,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,38 +50,38 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
 import com.example.tiptracker.data.model.BillType
-import com.example.tiptracker.ui.components.GoogleMapsAttribution
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.ui.theme.titleSmallMono
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.formatTipPercent
-import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
+import androidx.compose.ui.semantics.Role
+import com.example.tiptracker.ui.components.GoogleMapsAttribution
+import com.example.tiptracker.data.repository.PlaceDetails
 
 @Composable
 fun LogDetailPage(
     uiState: LogDetailUiState,
     imageFiles: List<File?>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowPlaceAddress: () -> Unit = {}
 ) {
     var selectedImageIndex by remember { mutableStateOf<Int?>(null) }
     val scrollState = rememberScrollState()
@@ -97,12 +96,12 @@ fun LogDetailPage(
             text = uiState.restaurantName,
             style = MaterialTheme.typography.headlineMedium
         )
-        uiState.address?.let { address ->
+        if (uiState.placeId != null) {
             Spacer(modifier = Modifier.height(4.dp))
-            LogAddress(
-                address = address,
-                fromPlaces = uiState.addressFromPlaces,
-                attributions = uiState.addressAttributions
+            PlaceAddress(
+                details = uiState.placeAddress,
+                isLoading = uiState.isLoadingAddress,
+                onShow = onShowPlaceAddress
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
@@ -273,52 +272,70 @@ private fun LogStatsCard(
     }
 }
 
+/**
+ * A linked place's address. Looking it up is billed, so it's fetched only once the user taps
+ * "Show address", then shown with the attributions Google requires.
+ */
 @Composable
-private fun LogAddress(
-    address: String,
-    fromPlaces: Boolean,
-    attributions: List<String>,
-    modifier: Modifier = Modifier
+private fun PlaceAddress(
+    details: PlaceDetails?,
+    isLoading: Boolean,
+    onShow: () -> Unit
 ) {
-    Column(modifier = modifier) {
-        val inlineContent = mapOf(
-            "locationIcon" to InlineTextContent(
-                Placeholder(
-                    width = 16.sp,
-                    height = 16.sp,
-                    placeholderVerticalAlign = PlaceholderVerticalAlign.Center
-                )
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.location),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        )
-        Text(
-            text = buildAnnotatedString {
-                appendInlineContent("locationIcon", "[location]")
-                append(" ")
-                append(address)
-            },
-            inlineContent = inlineContent,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        // A looked-up address is Google content: show the attributions Google requires
-        if (fromPlaces) {
-            attributions.forEach { attribution ->
-                Text(
-                    // May contain HTML links
-                    text = AnnotatedString.fromHtml(attribution),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            GoogleMapsAttribution()
+    val address = details?.address
+    if (address == null) {
+        val color = if (isLoading) {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        } else {
+            MaterialTheme.colorScheme.primary
         }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable(enabled = !isLoading, role = Role.Button, onClick = onShow)
+                .padding(vertical = 4.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.location),
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = if (isLoading) "Loading address…" else "Show address",
+                style = MaterialTheme.typography.bodyMedium,
+                color = color
+            )
+        }
+        return
+    }
+
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(R.drawable.location),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = address,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        details.attributions.forEach {
+            Text(
+                // May contain HTML links
+                text = AnnotatedString.fromHtml(it),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        GoogleMapsAttribution()
     }
 }
 
@@ -649,7 +666,6 @@ fun LogDetailPagePreview() {
                 total = 153.74,
                 partySize = 2,
                 restaurantName = "The Pearl",
-                address = "test address",
                 review = "goysters were so geurch",
                 rating = 8.6,
                 date = "2026-03-21",

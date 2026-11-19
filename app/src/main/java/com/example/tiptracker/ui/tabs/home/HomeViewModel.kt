@@ -135,6 +135,7 @@ sealed interface HomeAction {
     data class onRestaurantQueryChange(val query: String) : HomeAction
     data class onPlaceSelected(val prediction: PlacePrediction) : HomeAction
     data object onClearPlace : HomeAction
+    data object onRestaurantFieldFocus : HomeAction
     data class onReviewChange(val review: String) : HomeAction
     data class onDateChange(val date: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
@@ -243,6 +244,9 @@ class HomeViewModel(
             is HomeAction.onRestaurantQueryChange -> onRestaurantQueryChange(action.query)
             is HomeAction.onPlaceSelected -> onPlaceSelected(action.prediction)
             is HomeAction.onClearPlace -> clearPlace()
+            is HomeAction.onRestaurantFieldFocus -> {
+                if (_uiState.value.selectedPlace == null) placeSearch.onFocus()
+            }
             is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
             is HomeAction.onRatingChange -> _uiState.update { it.copy(rating = action.rating) }
@@ -283,8 +287,9 @@ class HomeViewModel(
     private fun clearPlace() {
         coordinatesJob?.cancel()
         _uiState.update { it.copy(selectedPlace = null, latitude = null, longitude = null) }
-        // Search the current text again so suggestions come back without retyping
-        placeSearch.onQueryChange(_uiState.value.restaurantName)
+        // Brings suggestions back: the ones picked from if the name is unchanged (free),
+        // otherwise a new search
+        placeSearch.onPlaceCleared(_uiState.value.restaurantName)
     }
 
     private fun saveLog() {
