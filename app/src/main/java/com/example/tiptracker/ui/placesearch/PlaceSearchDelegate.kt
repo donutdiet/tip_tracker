@@ -96,21 +96,26 @@ class PlaceSearchDelegate(
     }
 
     /**
-     * Call when the field gains focus while no place is linked. Searches the current text if
-     * its suggestions aren't already shown, e.g. they were cleared while offline.
+     * Call when the field gains focus while no place is linked, with the field's current [text].
+     * Searches it if its suggestions aren't already shown, e.g. they were cleared while offline,
+     * or the text was loaded from a saved log rather than typed.
      */
-    fun onFocus() {
-        val text = query.value.text
+    fun onFocus(text: String) {
         if (text.isSearchable() && resultsFor != text.trim()) setQuery(text)
     }
 
     /**
-     * Call when the user picks a prediction. Hides suggestions until the next edit and keeps
-     * them for [onPlaceCleared]. Returns the place's coordinates, or null if they couldn't be
-     * fetched. Ends the autocomplete session and starts a new one.
+     * Call when the user picks a prediction, with [fieldText] being what the field shows after
+     * the pick (if the screen fills in the place's name, that name). Hides suggestions until the
+     * next edit and keeps them for [onPlaceCleared] while the field still shows [fieldText].
+     * Returns the place's coordinates, or null if they couldn't be fetched. Ends the
+     * autocomplete session and starts a new one.
      */
-    suspend fun select(prediction: PlacePrediction): Coordinates? {
-        pickedFrom = query.value.text.trim() to _state.value.predictions
+    suspend fun select(
+        prediction: PlacePrediction,
+        fieldText: String = query.value.text
+    ): Coordinates? {
+        pickedFrom = fieldText.trim() to _state.value.predictions
         _state.value = PlaceSearchState()
 
         // TODO: re-enable when the map ships. Disabled so no Place Details request is made;
@@ -207,8 +212,8 @@ class PlaceSearchDelegate(
 
     private companion object {
         // Longer debounce and minimum length keep billed autocomplete requests down
-        const val DEBOUNCE_MS = 500L
-        const val MIN_QUERY_LENGTH = 5
+        const val DEBOUNCE_MS = 450L
+        const val MIN_QUERY_LENGTH = 3
         const val LOCATION_TIMEOUT_MS = 2_000L
         val LOCATION_RETRY_INTERVAL = 1.minutes
     }

@@ -14,15 +14,18 @@ val localProperties = Properties().apply {
         localPropertiesFile.inputStream().use { load(it) }
     }
 }
-val placesApiKey = localProperties.getProperty("PLACES_API_KEY") ?: ""
+// Separate keys so each can be restricted in GCP to its own package name and signing certificate.
+val placesApiKeyDebug = localProperties.getProperty("PLACES_API_KEY_DEBUG") ?: ""
+val placesApiKeyRelease = localProperties.getProperty("PLACES_API_KEY_RELEASE") ?: ""
 
 // Without a key the Places SDK is never initialized and restaurant search silently disappears,
 // so refuse to build a release that would ship that way. Debug builds still work without one.
-val checkPlacesApiKey by tasks.registering {
-    val key = placesApiKey
+val checkPlacesApiKey = tasks.register("checkPlacesApiKey") {
+    description = "Fails release builds when PLACES_API_KEY_RELEASE is missing from local.properties."
+    val key = placesApiKeyRelease
     doLast {
         if (key.isBlank()) {
-            throw GradleException("PLACES_API_KEY is missing from local.properties; release builds require it.")
+            throw GradleException("PLACES_API_KEY_RELEASE is missing from local.properties; release builds require it.")
         }
     }
 }
@@ -44,12 +47,10 @@ android {
         applicationId = "com.jerrywang.tiptracker"
         minSdk = 28
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.3.1"
+        versionCode = 18
+        versionName = "1.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "PLACES_API_KEY", "\"$placesApiKey\"")
     }
 
     buildFeatures {
@@ -58,7 +59,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Lets debug builds install alongside the Play Store app instead of conflicting with it
+            applicationIdSuffix = ".debug"
+            buildConfigField("String", "PLACES_API_KEY", "\"$placesApiKeyDebug\"")
+        }
         release {
+            buildConfigField("String", "PLACES_API_KEY", "\"$placesApiKeyRelease\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
