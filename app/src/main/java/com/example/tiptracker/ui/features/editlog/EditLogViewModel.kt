@@ -82,6 +82,7 @@ sealed interface EditLogAction {
     data class PlaceSelected(val prediction: PlacePrediction) : EditLogAction
     data object ClearPlace : EditLogAction
     data object RestaurantFieldFocused : EditLogAction
+    data object ShowPlaceAddress : EditLogAction
     data class ReviewChanged(val review: String) : EditLogAction
     data class DateChanged(val date: String) : EditLogAction
     data class RatingChanged(val rating: Double) : EditLogAction
@@ -149,8 +150,11 @@ class EditLogViewModel(
             is EditLogAction.PlaceSelected -> onPlaceSelected(action.prediction)
             EditLogAction.ClearPlace -> clearPlace()
             EditLogAction.RestaurantFieldFocused -> {
-                if (_uiState.value.selectedPlace == null) placeSearch.onFocus()
+                // The name loaded from the log was never typed, so pass it in to be searched
+                val state = _uiState.value
+                if (state.selectedPlace == null) placeSearch.onFocus(state.restaurantName)
             }
+            EditLogAction.ShowPlaceAddress -> showPlaceAddress()
             is EditLogAction.ReviewChanged -> edit { it.copy(review = action.review) }
             is EditLogAction.DateChanged -> edit { it.copy(date = action.date) }
             is EditLogAction.RatingChanged -> edit { it.copy(rating = action.rating) }
@@ -227,7 +231,6 @@ class EditLogViewModel(
 
                 initialUiState = loadedState
                 _uiState.value = loadedState
-                log.placeId?.let(::loadPlaceDetails)
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -249,9 +252,15 @@ class EditLogViewModel(
         placeSearch.onPlaceCleared(_uiState.value.restaurantName)
     }
 
-    // Only the place ID is stored (Google's terms), so look up the address once when the
-    // screen opens (Place Details Essentials). The name isn't requested: it would bill at Pro.
-    private fun loadPlaceDetails(placeId: String) {
+    // Only the place ID is stored (Google's terms), so the address of a place linked when the
+    // screen opened is looked up only when the user taps "Show address", as each lookup is billed
+    // (Place Details Essentials). The name isn't requested: it would bill at Pro.
+    private fun showPlaceAddress() {
+        val place = _uiState.value.selectedPlace ?: return
+        if (place.hasDetails || place.isLoading) return
+        val placeId = place.placeId
+
+        _uiState.update { it.copy(selectedPlace = place.copy(isLoading = true, lookupFailed = false)) }
         viewModelScope.launch {
             val details = placesRepository.fetchPlaceDetails(placeId)
             _uiState.update {

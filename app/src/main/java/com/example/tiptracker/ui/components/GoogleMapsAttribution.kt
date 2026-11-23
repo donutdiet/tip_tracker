@@ -25,6 +25,8 @@ fun GoogleMapsAttribution(
         text = "Google Maps",
         color = if (background.luminance() < 0.5f) Color.White else Color(0xFF5E5E5E),
         fontSize = 12.sp,
+        // Otherwise it inherits the body line height (24sp), doubling its height
+        lineHeight = 16.sp,
         fontWeight = FontWeight.Normal,
         letterSpacing = 0.sp,
         maxLines = 1,

@@ -71,16 +71,26 @@ class PlaceSearchDelegateTest {
     }
 
     @Test
-    fun `queries shorter than five characters do not search`() = runTest {
+    fun `queries shorter than three characters do not search`() = runTest {
         val delegate = delegate()
 
-        delegate.onQueryChange("abcd")
+        delegate.onQueryChange("ab")
         settle()
-        delegate.onQueryChange("  abcd  ")
+        delegate.onQueryChange("  ab  ")
         settle()
 
         coVerify(exactly = 0) { places.search(any(), any(), any()) }
         assertTrue(delegate.state.value.predictions.isEmpty())
+    }
+
+    @Test
+    fun `a three character query searches`() = runTest {
+        val delegate = delegate()
+
+        delegate.onQueryChange("KFC")
+        settle()
+
+        coVerify(exactly = 1) { places.search("KFC", any(), any()) }
     }
 
     @Test
@@ -158,7 +168,7 @@ class PlaceSearchDelegateTest {
         settle()
         coVerify(exactly = 0) { places.search(any(), any(), any()) }
 
-        delegate.onFocus()
+        delegate.onFocus("pearl")
         settle()
 
         coVerify(exactly = 1) { places.search("pearl", any(), any()) }
@@ -173,7 +183,7 @@ class PlaceSearchDelegateTest {
         settle()
 
         // "No results" is a result too: don't pay to hear it again
-        delegate.onFocus()
+        delegate.onFocus("pearl")
         settle()
 
         coVerify(exactly = 1) { places.search(any(), any(), any()) }
@@ -182,14 +192,26 @@ class PlaceSearchDelegateTest {
     @Test
     fun `focusing with a short query does not search`() = runTest {
         val delegate = delegate()
-        delegate.onQueryChange("pea")
+        delegate.onQueryChange("pe")
         settle()
 
-        delegate.onFocus()
+        delegate.onFocus("pe")
         settle()
 
         coVerify(exactly = 0) { places.search(any(), any(), any()) }
     }
+
+    @Test
+    fun `focusing searches text that was never typed, like a name loaded from a saved log`() =
+        runTest {
+            val delegate = delegate()
+
+            delegate.onFocus("The Pearl")
+            settle()
+
+            coVerify(exactly = 1) { places.search("The Pearl", any(), any()) }
+            assertEquals(listOf(pearl), delegate.state.value.predictions)
+        }
 
     @Test
     fun `no search when the Places SDK is unavailable`() = runTest {
@@ -316,7 +338,28 @@ class PlaceSearchDelegateTest {
             coVerify(exactly = 1) { places.search(any(), any(), any()) }
 
             // And focusing right after doesn't pay for them again
-            delegate.onFocus()
+            delegate.onFocus("pearl ")
+            settle()
+            coVerify(exactly = 1) { places.search(any(), any(), any()) }
+        }
+
+    @Test
+    fun `clearing a place whose name filled the field restores its suggestions without searching`() =
+        runTest {
+            val delegate = delegate()
+            delegate.onQueryChange("pear")
+            settle()
+            delegate.select(pearl, fieldText = pearl.name)
+            settle()
+
+            delegate.onPlaceCleared(pearl.name)
+            settle()
+
+            assertEquals(listOf(pearl), delegate.state.value.predictions)
+            coVerify(exactly = 1) { places.search(any(), any(), any()) }
+
+            // Nor does focusing the filled-in name afterwards
+            delegate.onFocus(pearl.name)
             settle()
             coVerify(exactly = 1) { places.search(any(), any(), any()) }
         }

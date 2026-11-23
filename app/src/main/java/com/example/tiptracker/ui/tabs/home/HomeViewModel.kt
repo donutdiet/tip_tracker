@@ -245,7 +245,8 @@ class HomeViewModel(
             is HomeAction.onPlaceSelected -> onPlaceSelected(action.prediction)
             is HomeAction.onClearPlace -> clearPlace()
             is HomeAction.onRestaurantFieldFocus -> {
-                if (_uiState.value.selectedPlace == null) placeSearch.onFocus()
+                val state = _uiState.value
+                if (state.selectedPlace == null) placeSearch.onFocus(state.restaurantName)
             }
             is HomeAction.onReviewChange -> _uiState.update { it.copy(review = action.review) }
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
@@ -263,18 +264,20 @@ class HomeViewModel(
         if (!placeLinked) placeSearch.onQueryChange(query)
     }
 
-    // Links the place without touching the typed name: only what the user typed is saved
+    // Links the place and fills the name field with the place's name, which the user can still
+    // edit before saving
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
         _uiState.update {
             it.copy(
+                restaurantName = prediction.name,
                 selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
                 longitude = null
             )
         }
         coordinatesJob = viewModelScope.launch {
-            val coordinates = placeSearch.select(prediction)
+            val coordinates = placeSearch.select(prediction, fieldText = prediction.name)
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
                 if (it.selectedPlace?.placeId == prediction.placeId) {
@@ -316,8 +319,8 @@ class HomeViewModel(
                     partySize = partySize,
                     // The toggle is hidden for a party of one, so don't keep a stale choice
                     billType = if (partySize > 1) state.billType else BillType.SPLIT,
-                    // Google's terms allow storing only the place ID: the name is the user's own
-                    // text, and the place's address is never saved
+                    // Whatever is in the name field (filled from a picked place, possibly edited);
+                    // the place's address is never saved
                     restaurantName = state.restaurantName,
                     address = null,
                     review = state.review,

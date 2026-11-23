@@ -9,7 +9,6 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.CircularBounds
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.model.PlaceTypes
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
@@ -57,7 +56,7 @@ class PlacesRepository(private val context: Context) {
     fun newSessionToken(): AutocompleteSessionToken = AutocompleteSessionToken.newInstance()
 
     /**
-     * Restaurant-like predictions for [query], biased toward [origin] when known.
+     * Place predictions of any type for [query], biased toward [origin] when known.
      * Cancelling the calling coroutine cancels the in-flight request.
      */
     suspend fun search(
@@ -71,7 +70,6 @@ class PlacesRepository(private val context: Context) {
             val request = FindAutocompletePredictionsRequest.builder()
                 .setQuery(query)
                 .setSessionToken(token)
-                .setTypesFilter(RESTAURANT_TYPES)
                 .setCancellationToken(cancellation.token)
                 .apply {
                     origin?.let {
@@ -156,14 +154,5 @@ class PlacesRepository(private val context: Context) {
 
     private companion object {
         const val BIAS_RADIUS_METERS = 25_000.0
-
-        // The API accepts at most five types
-        val RESTAURANT_TYPES = listOf(
-            PlaceTypes.RESTAURANT,
-            PlaceTypes.CAFE,
-            PlaceTypes.BAR,
-            PlaceTypes.BAKERY,
-            PlaceTypes.MEAL_TAKEAWAY
-        )
     }
 }
