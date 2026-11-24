@@ -20,7 +20,32 @@ import kotlin.coroutines.resumeWithException
 data class PlacePrediction(
     val placeId: String,
     val name: String,
-    val address: String
+    val address: String,
+    // A restaurant or somewhere similar (cafe, bar, bakery, ...); these are listed first
+    val isFoodPlace: Boolean = false
+)
+
+/**
+ * Whether Google's place [types] describe somewhere people eat or drink. Places like grocery
+ * stores aren't, but are still suggested (e.g. for their food courts), just after these.
+ * Types: https://developers.google.com/maps/documentation/places/android-sdk/place-types
+ */
+private fun isFoodPlace(types: List<String>): Boolean = types.any { type ->
+    type in FOOD_PLACE_TYPES || FOOD_PLACE_TYPE_SUFFIXES.any { type.endsWith(it) }
+}
+
+/** Food places first; otherwise keeps Google's relevance order. */
+private fun List<PlacePrediction>.foodPlacesFirst(): List<PlacePrediction> =
+    sortedByDescending { it.isFoodPlace } // Stable, so order within each group is kept
+
+// Covers e.g. "pizza_restaurant", "cat_cafe", "wine_bar"
+private val FOOD_PLACE_TYPE_SUFFIXES = listOf("_restaurant", "_cafe", "_bar")
+
+private val FOOD_PLACE_TYPES = setOf(
+    "restaurant", "cafe", "bar", "pub", "bakery", "bistro", "diner", "deli", "cafeteria",
+    "food_court", "meal_takeaway", "meal_delivery", "steak_house", "gastropub", "tea_house",
+    "coffee_shop", "sandwich_shop", "ice_cream_shop", "dessert_shop", "donut_shop",
+    "bagel_shop", "juice_shop", "acai_shop", "noodle_shop"
 )
 
 /**
@@ -56,7 +81,9 @@ class PlacesRepository(private val context: Context) {
     fun newSessionToken(): AutocompleteSessionToken = AutocompleteSessionToken.newInstance()
 
     /**
-     * Place predictions of any type for [query], biased toward [origin] when known.
+     * Place predictions of any type for [query], biased toward [origin] when known, with
+     * restaurant-like places first. Not filtered by type, so places like grocery stores can
+     * still be picked.
      * Cancelling the calling coroutine cancels the in-flight request.
      */
     suspend fun search(
@@ -86,9 +113,10 @@ class PlacesRepository(private val context: Context) {
                     PlacePrediction(
                         placeId = it.placeId,
                         name = it.getPrimaryText(null).toString(),
-                        address = it.getSecondaryText(null).toString()
+                        address = it.getSecondaryText(null).toString(),
+                        isFoodPlace = isFoodPlace(it.types)
                     )
-                }
+                }.foodPlacesFirst()
             )
         } catch (e: CancellationException) {
             throw e

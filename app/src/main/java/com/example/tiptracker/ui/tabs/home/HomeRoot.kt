@@ -33,7 +33,7 @@ fun HomeRoot(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var currentPage by rememberSaveable { mutableIntStateOf(0) }
-    var isResettingOnSave by remember { mutableStateOf(false) }
+    var isResettingOnSave by remember { mutableStateOf(false) } // Scuffed, only used for transition management
     val snackbarScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.events) { event ->

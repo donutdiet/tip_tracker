@@ -40,6 +40,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -61,7 +64,7 @@ import com.example.tiptracker.utils.rememberLocationPermissionPrompt
  * Restaurant name input with Google Maps suggestions. Whatever the user types is the name that
  * gets saved; picking a suggestion only links the log to that place ([selectedPlace]), whose
  * official name and address are shown below for reference. Typing never unlinks the place;
- * the Clear button does. Offline (or if a search fails) it is just a free-text field.
+ * the Unlink button does. Offline (or if a search fails) it is just a free-text field.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +92,7 @@ fun PlaceSearchField(
         // Text the user typed already matches; anything else came from outside
         if (query != fieldValue.text) fieldValue = TextFieldValue(query, TextRange(query.length))
     }
-    // No suggestions while a place is linked; Clear first to pick another
+    // No suggestions while a place is linked; Unlink first to pick another
     val showSuggestions = expanded && selectedPlace == null && predictions.isNotEmpty()
     val promptForLocation = rememberLocationPermissionPrompt()
 
@@ -217,10 +220,10 @@ fun PlaceSearchField(
 @Composable
 private fun SelectedPlaceInfo(place: SelectedPlace, onShowAddress: () -> Unit, onClear: () -> Unit) {
     val background = MaterialTheme.colorScheme.surfaceContainerLow
-    // Collapsed it's a single line, so center everything and let the Clear button set the
-    // height; expanded, top-align so Clear stays beside the first line
+    // Collapsed it's a single line, so center everything and let the Unlink button set the
+    // height; expanded, top-align so Unlink stays beside the first line
     val collapsed = !place.hasDetails
-    // Expanded, the icon and Clear are centered on the first text line: the bold name for a
+    // Expanded, the icon and Unlink are centered on the first text line: the bold name for a
     // picked suggestion, or the smaller address for a place looked up on tap
     val nameStyle = MaterialTheme.typography.bodyMedium
     val addressStyle = MaterialTheme.typography.bodySmall
@@ -328,8 +331,14 @@ private fun SelectedPlaceInfo(place: SelectedPlace, onShowAddress: () -> Unit, o
                         .heightIn(min = CLEAR_MIN_HEIGHT)
                         // Shift up so its label centers on the first text line
                         .offset(y = clearOffset)
+                        .semantics { contentDescription = "Unlink Google Maps place" }
                 ) {
-                    Text("Clear", style = MaterialTheme.typography.labelMedium)
+                    // Hidden from accessibility so only the fuller description above is read
+                    Text(
+                        "Unlink",
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.clearAndSetSemantics {}
+                    )
                 }
             }
         }

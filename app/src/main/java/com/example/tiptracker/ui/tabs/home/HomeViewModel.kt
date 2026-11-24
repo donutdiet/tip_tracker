@@ -40,21 +40,21 @@ data class HomeUiState(
     val billType: BillType = BillType.SPLIT,
     val roundUpTip: Boolean = false,
     val roundUpTotal: Boolean = false,
-    // Exactly what the user typed; this is the name that gets saved
     val restaurantName: String = "",
-    // The Google Maps place picked from the suggestions, if any. Only its ID is saved.
-    val selectedPlace: SelectedPlace? = null,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-    val predictions: List<PlacePrediction> = emptyList(),
-    val searchFailed: Boolean = false,
-    val isOffline: Boolean = false,
     val review: String = "",
     val date: String = LocalDate.now().toString(),
     val rating: Double = 5.0,
+    val predictions: List<PlacePrediction> = emptyList(),
+    val selectedPlace: SelectedPlace? = null,
+    val searchFailed: Boolean = false,
+    val isOffline: Boolean = false,
     val isSaving: Boolean = false,
     val tipPreset1Percent: Int = 10,
     val tipPreset2Percent: Int = 15,
+
+    // Not used rn
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 ) {
     // Text displayed in the custom tip text field
     val displayedTipPercent: String
@@ -256,7 +256,7 @@ class HomeViewModel(
         }
     }
 
-    // Typing never unlinks a picked place (that's what Clear is for), and there's nothing to
+    // Typing never unlinks a picked place (that's what Unlink is for), and there's nothing to
     // search for while one is linked
     private fun onRestaurantQueryChange(query: String) {
         val placeLinked = _uiState.value.selectedPlace != null

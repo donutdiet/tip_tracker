@@ -169,7 +169,7 @@ class EditLogViewModel(
         }
     }
 
-    // Typing never unlinks a picked place (that's what Clear is for), and there's nothing to
+    // Typing never unlinks a picked place (that's what Unlink is for), and there's nothing to
     // search for while one is linked
     private fun onRestaurantQueryChange(query: String) {
         val placeLinked = _uiState.value.selectedPlace != null
@@ -177,18 +177,20 @@ class EditLogViewModel(
         if (!placeLinked) placeSearch.onQueryChange(query)
     }
 
-    // Links the place without touching the typed name: only what the user typed is saved
+    // Links the place and fills the name field with the place's name, which the user can still
+    // edit before saving
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
         edit {
             it.copy(
+                restaurantName = prediction.name,
                 selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
                 longitude = null
             )
         }
         coordinatesJob = viewModelScope.launch {
-            val coordinates = placeSearch.select(prediction)
+            val coordinates = placeSearch.select(prediction, fieldText = prediction.name)
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
                 if (it.selectedPlace?.placeId == prediction.placeId) {

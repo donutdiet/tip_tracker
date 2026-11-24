@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -119,6 +120,9 @@ fun rememberLocationPermissionController(
  */
 @Composable
 fun rememberLocationPermissionPrompt(): () -> Unit {
+    // Skip Koin injection and permission logic when rendering in Compose Preview
+    if (LocalInspectionMode.current) return {}
+
     val settings = koinInject<SettingsRepository>()
     val scope = rememberCoroutineScope()
     // Start as "asked" so we never prompt before the stored value has loaded
