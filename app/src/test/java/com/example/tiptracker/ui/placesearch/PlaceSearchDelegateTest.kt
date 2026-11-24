@@ -2,6 +2,8 @@ package com.example.tiptracker.ui.placesearch
 
 import com.example.tiptracker.data.helper.Coordinates
 import com.example.tiptracker.data.helper.LocationProvider
+import com.example.tiptracker.data.model.RestaurantHistory
+import com.example.tiptracker.data.model.restaurantNameKey
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.data.repository.PlaceSearchResult
@@ -34,6 +36,7 @@ class PlaceSearchDelegateTest {
     }
     private val location = mockk<LocationProvider>()
     private val status = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Online)
+    private val history = MutableStateFlow<List<RestaurantHistory>>(emptyList())
 
     private val pearl = PlacePrediction("id-pearl", "The Pearl", "1 Main St, Portland, OR")
     private val results = PlaceSearchResult.Success(listOf(pearl))
@@ -45,7 +48,7 @@ class PlaceSearchDelegateTest {
 
     // backgroundScope is cancelled when the test ends, which stops the delegate's collector
     private fun TestScope.delegate() =
-        PlaceSearchDelegate(backgroundScope, places, location, status, testTimeSource)
+        PlaceSearchDelegate(backgroundScope, places, location, status, history, testTimeSource)
 
     // advanceUntilIdle() ignores background work, so move virtual time past the debounce
     // (500 ms) and any simulated latency explicitly, then run what is due.
@@ -469,5 +472,152 @@ class PlaceSearchDelegateTest {
 
         coVerify { places.search("pizza", null, token) }
         coVerify { places.search("pasta", here, token) }
+    }
+
+    // ----- History suggestions -----
+
+    private fun past(name: String, visits: Int = 1, last: String = "2026-01-01", placeId: String? = null) =
+        RestaurantHistory(name, placeId, visits, last, restaurantNameKey(name))
+
+    @Test
+    fun `history matches word starts as typed, without waiting or searching`() = runTest {
+        history.value = listOf(past("The Pearl"), past("Pearl Bakery"), past("Spearmint"))
+        val delegate = delegate()
+        runCurrent()
+
+        delegate.onQueryChange("pe")
+
+        // Immediate, and from a single word start: "Spearmint" contains "pe" but doesn't start with it
+        assertEquals(
+            listOf("The Pearl", "Pearl Bakery"),
+            delegate.state.value.history.map { it.name }
+        )
+        settle()
+        coVerify(exactly = 0) { places.search(any(), any(), any()) }
+    }
+
+    @Test
+    fun `history ignores case and punctuation, ranks by visits, and shows at most three`() = runTest {
+        history.value = listOf(
+            past("Joe's Diner", visits = 1),
+            past("JOES PIZZA", visits = 5),
+            past("Joe's Cafe", visits = 2, last = "2026-02-01"),
+            past("Joes Bar", visits = 2, last = "2026-03-01")
+        )
+        val delegate = delegate()
+        runCurrent()
+
+        delegate.onQueryChange("joes")
+
+        assertEquals(
+            listOf("JOES PIZZA", "Joes Bar", "Joe's Cafe"),
+            delegate.state.value.history.map { it.name }
+        )
+    }
+
+    @Test
+    fun `history works offline`() = runTest {
+        status.value = ConnectionStatus.Offline
+        history.value = listOf(past("The Pearl"))
+        val delegate = delegate()
+        runCurrent()
+
+        delegate.onQueryChange("pearl")
+        settle()
+
+        assertEquals(listOf("The Pearl"), delegate.state.value.history.map { it.name })
+        assertTrue(delegate.state.value.predictions.isEmpty())
+    }
+
+    @Test
+    fun `history follows logs saved while the field is in use`() = runTest {
+        val delegate = delegate()
+        runCurrent()
+        delegate.onQueryChange("pearl")
+        assertTrue(delegate.state.value.history.isEmpty())
+
+        history.value = listOf(past("The Pearl"))
+        runCurrent()
+
+        assertEquals(listOf("The Pearl"), delegate.state.value.history.map { it.name })
+    }
+
+    @Test
+    fun `picking history makes no request, and unlinking brings Google's suggestions back for free`() = runTest {
+        history.value = listOf(past("The Pearl", placeId = "id-pearl"))
+        val delegate = delegate()
+        runCurrent()
+        delegate.onQueryChange("pearl")
+        settle()
+
+        delegate.onHistoryPicked(fieldText = "The Pearl")
+        assertTrue(delegate.state.value.predictions.isEmpty())
+
+        delegate.onPlaceCleared("The Pearl")
+        settle()
+
+        assertEquals(listOf(pearl), delegate.state.value.predictions)
+        coVerify(exactly = 1) { places.search(any(), any(), any()) }
+        coVerify(exactly = 0) { places.fetchPlaceDetails(any()) }
+    }
+
+    // ----- Merging history into Google's suggestions -----
+
+    @Test
+    fun `a visited place Google suggests is shown once, first, under the user's name`() = runTest {
+        val other = PlacePrediction("id-other", "Pearl Diner", "2 Oak Ave")
+        coEvery { places.search(any(), any(), any()) } returns
+            PlaceSearchResult.Success(listOf(other, pearl))
+        history.value = listOf(
+            past("Pearl rooftop", visits = 3, placeId = "id-pearl"),
+            past("Pearl Bakery")
+        )
+        val delegate = delegate()
+        runCurrent()
+
+        delegate.onQueryChange("pearl")
+        settle()
+
+        val state = delegate.state.value
+        // Visited place first, then Google's order
+        assertEquals(listOf(pearl, other), state.predictions)
+        assertEquals("Pearl rooftop", state.visitedPlaces.getValue("id-pearl").name)
+        // Not repeated under the user's logs; the unvisited history row stays
+        assertEquals(listOf("Pearl Bakery"), state.history.map { it.name })
+        assertEquals("Pearl rooftop", delegate.nameFor(pearl))
+        assertEquals("Pearl Diner", delegate.nameFor(other))
+    }
+
+    @Test
+    fun `a linked past place waits for Google, so it never moves between lists`() = runTest {
+        history.value = listOf(past("Pearl rooftop", placeId = "id-pearl"), past("Pearl Bakery"))
+        coEvery { places.search(any(), any(), any()) } returns PlaceSearchResult.Success(emptyList())
+        val delegate = delegate()
+        runCurrent()
+
+        delegate.onQueryChange("pearl")
+
+        // Unlinked rows never merge, so they show right away; the linked one is held back
+        assertEquals(listOf("Pearl Bakery"), delegate.state.value.history.map { it.name })
+
+        settle()
+
+        // Google didn't return it, so it's listed with history
+        assertEquals(
+            listOf("Pearl rooftop", "Pearl Bakery"),
+            delegate.state.value.history.map { it.name }
+        )
+    }
+
+    @Test
+    fun `when Google can't search, linked past places show right away`() = runTest {
+        status.value = ConnectionStatus.Offline
+        history.value = listOf(past("Pearl rooftop", placeId = "id-pearl"))
+        val delegate = delegate()
+        runCurrent()
+
+        delegate.onQueryChange("pe")
+
+        assertEquals(listOf("Pearl rooftop"), delegate.state.value.history.map { it.name })
     }
 }

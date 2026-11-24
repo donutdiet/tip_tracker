@@ -5,7 +5,12 @@ import com.example.tiptracker.data.helper.ImageStorageHelper
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.LogStats
 import com.example.tiptracker.data.model.RatingCount
+import com.example.tiptracker.data.model.RestaurantHistory
+import com.example.tiptracker.data.model.groupRestaurantHistory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 class LogRepository(
     private val logDao: LogDao,
@@ -33,6 +38,12 @@ class LogRepository(
         }
         return deletedCount
     }
+
+    /** One row per restaurant the user has logged, for history suggestions. */
+    fun getRestaurantHistory(): Flow<List<RestaurantHistory>> =
+        logDao.getRestaurantVisits()
+            .map(::groupRestaurantHistory)
+            .flowOn(Dispatchers.Default)
 
     fun getLogStats(): Flow<LogStats> = logDao.getLogStats()
 

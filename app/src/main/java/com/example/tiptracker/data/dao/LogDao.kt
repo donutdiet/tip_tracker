@@ -7,6 +7,7 @@ import androidx.room.Update
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.LogStats
 import com.example.tiptracker.data.model.RatingCount
+import com.example.tiptracker.data.model.RestaurantVisit
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -25,6 +26,10 @@ interface LogDao {
 
     @Query("DELETE FROM log WHERE id = :id")
     suspend fun deleteLogById(id: Int): Int
+
+    // History suggestions; matching ignores punctuation in repository code.
+    @Query("SELECT id, restaurant_name AS name, place_id AS placeId, date FROM log")
+    fun getRestaurantVisits(): Flow<List<RestaurantVisit>>
 
     // Stats profile section. Bill, total and tip are whole-party amounts, so a separate check
     // (the user's own check only) is extrapolated to the party by assuming everyone spent the

@@ -13,3 +13,8 @@ fun formatTipPercent(value: Double): String {
         String.format(Locale.getDefault(), "%.2f", value)
     }
 }
+
+/** Trims and turns each run of spaces, tabs or newlines into a single space. */
+fun String.collapseWhitespace(): String = trim().replace(WHITESPACE_RUN, " ")
+
+private val WHITESPACE_RUN = Regex("\\s+")

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.helper.LocationProvider
 import com.example.tiptracker.data.model.BillType
+import com.example.tiptracker.data.model.RestaurantHistory
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogRepository
@@ -12,6 +13,7 @@ import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
 import com.example.tiptracker.ui.placesearch.SelectedPlace
+import com.example.tiptracker.utils.collapseWhitespace
 import com.example.tiptracker.utils.roundToTwoDecimals
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -39,6 +41,8 @@ data class EditLogUiState(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val predictions: List<PlacePrediction> = emptyList(),
+    val history: List<RestaurantHistory> = emptyList(),
+    val visitedPlaces: Map<String, RestaurantHistory> = emptyMap(),
     val searchFailed: Boolean = false,
     val isOffline: Boolean = false,
     val review: String = "",
@@ -80,6 +84,7 @@ sealed interface EditLogAction {
     data class BillTypeChanged(val billType: BillType) : EditLogAction
     data class RestaurantQueryChanged(val query: String) : EditLogAction
     data class PlaceSelected(val prediction: PlacePrediction) : EditLogAction
+    data class HistorySelected(val history: RestaurantHistory) : EditLogAction
     data object ClearPlace : EditLogAction
     data object RestaurantFieldFocused : EditLogAction
     data object ShowPlaceAddress : EditLogAction
@@ -109,7 +114,8 @@ class EditLogViewModel(
         scope = viewModelScope,
         places = placesRepository,
         location = locationProvider,
-        connectionStatus = connectivityRepository.status
+        connectionStatus = connectivityRepository.status,
+        history = logsRepository.getRestaurantHistory()
     )
 
     // In-flight lookup of the selected place's coordinates
@@ -124,6 +130,8 @@ class EditLogViewModel(
         state.copy(
             predictions = search.predictions,
             searchFailed = search.searchFailed,
+            history = search.history,
+            visitedPlaces = search.visitedPlaces,
             isOffline = connection == ConnectionStatus.Offline
         )
     }.stateIn(
@@ -148,6 +156,7 @@ class EditLogViewModel(
             is EditLogAction.BillTypeChanged -> edit { it.copy(billType = action.billType) }
             is EditLogAction.RestaurantQueryChanged -> onRestaurantQueryChange(action.query)
             is EditLogAction.PlaceSelected -> onPlaceSelected(action.prediction)
+            is EditLogAction.HistorySelected -> onHistorySelected(action.history)
             EditLogAction.ClearPlace -> clearPlace()
             EditLogAction.RestaurantFieldFocused -> {
                 // The name loaded from the log was never typed, so pass it in to be searched
@@ -181,16 +190,18 @@ class EditLogViewModel(
     // edit before saving
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
+        // The user's own name for a place they've logged before, otherwise Google's
+        val name = placeSearch.nameFor(prediction)
         edit {
             it.copy(
-                restaurantName = prediction.name,
+                restaurantName = name,
                 selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
                 longitude = null
             )
         }
         coordinatesJob = viewModelScope.launch {
-            val coordinates = placeSearch.select(prediction, fieldText = prediction.name)
+            val coordinates = placeSearch.select(prediction, fieldText = name)
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
                 if (it.selectedPlace?.placeId == prediction.placeId) {
@@ -198,6 +209,22 @@ class EditLogViewModel(
                 } else it
             }
         }
+    }
+
+    // Fills in the name used on the last visit, and links the place the past visits are linked
+    // to, if any. No API call: the place ID is already saved.
+    private fun onHistorySelected(history: RestaurantHistory) {
+        coordinatesJob?.cancel()
+        val name = history.name
+        edit {
+            it.copy(
+                restaurantName = name,
+                selectedPlace = history.placeId?.let { placeId -> SelectedPlace(placeId) },
+                latitude = null,
+                longitude = null
+            )
+        }
+        placeSearch.onHistoryPicked(fieldText = name)
     }
 
     private fun loadLog() {
@@ -301,7 +328,7 @@ class EditLogViewModel(
                         partySize = partySize,
                         // The toggle is hidden for a party of one, so don't keep a stale choice
                         billType = if (partySize > 1) state.billType else BillType.SPLIT,
-                        restaurantName = state.restaurantName,
+                        restaurantName = state.restaurantName.collapseWhitespace(),
                         // Addresses are no longer shown or entered (Google's terms don't allow
                         // saving a place's), so any old typed one is cleared on save
                         address = null,

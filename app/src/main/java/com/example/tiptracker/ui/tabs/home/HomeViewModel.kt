@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.helper.LocationProvider
 import com.example.tiptracker.data.model.BillType
+import com.example.tiptracker.data.model.RestaurantHistory
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogRepository
@@ -13,6 +14,7 @@ import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.data.repository.SettingsRepository
 import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
 import com.example.tiptracker.ui.placesearch.SelectedPlace
+import com.example.tiptracker.utils.collapseWhitespace
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatTipPercent
 import com.example.tiptracker.utils.roundToTwoDecimals
@@ -45,6 +47,8 @@ data class HomeUiState(
     val date: String = LocalDate.now().toString(),
     val rating: Double = 5.0,
     val predictions: List<PlacePrediction> = emptyList(),
+    val history: List<RestaurantHistory> = emptyList(),
+    val visitedPlaces: Map<String, RestaurantHistory> = emptyMap(),
     val selectedPlace: SelectedPlace? = null,
     val searchFailed: Boolean = false,
     val isOffline: Boolean = false,
@@ -134,8 +138,10 @@ sealed interface HomeAction {
     data object onRoundUpTotalToggle : HomeAction
     data class onRestaurantQueryChange(val query: String) : HomeAction
     data class onPlaceSelected(val prediction: PlacePrediction) : HomeAction
+    data class onHistorySelected(val history: RestaurantHistory) : HomeAction
     data object onClearPlace : HomeAction
     data object onRestaurantFieldFocus : HomeAction
+    data object onShowPlaceAddress : HomeAction
     data class onReviewChange(val review: String) : HomeAction
     data class onDateChange(val date: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
@@ -151,7 +157,7 @@ sealed interface HomeEvent {
 class HomeViewModel(
     private val logsRepository: LogRepository,
     settingsRepository: SettingsRepository,
-    placesRepository: PlacesRepository,
+    private val placesRepository: PlacesRepository,
     locationProvider: LocationProvider,
     connectivityRepository: ConnectivityRepository
 ) : ViewModel() {
@@ -160,7 +166,8 @@ class HomeViewModel(
         scope = viewModelScope,
         places = placesRepository,
         location = locationProvider,
-        connectionStatus = connectivityRepository.status
+        connectionStatus = connectivityRepository.status,
+        history = logsRepository.getRestaurantHistory()
     )
 
     // In-flight lookup of the selected place's coordinates
@@ -179,6 +186,8 @@ class HomeViewModel(
             tipPreset2Percent = p2,
             predictions = search.predictions,
             searchFailed = search.searchFailed,
+            history = search.history,
+            visitedPlaces = search.visitedPlaces,
             isOffline = connection == ConnectionStatus.Offline
         )
     }.stateIn(
@@ -243,6 +252,8 @@ class HomeViewModel(
 
             is HomeAction.onRestaurantQueryChange -> onRestaurantQueryChange(action.query)
             is HomeAction.onPlaceSelected -> onPlaceSelected(action.prediction)
+            is HomeAction.onHistorySelected -> onHistorySelected(action.history)
+            is HomeAction.onShowPlaceAddress -> showPlaceAddress()
             is HomeAction.onClearPlace -> clearPlace()
             is HomeAction.onRestaurantFieldFocus -> {
                 val state = _uiState.value
@@ -268,20 +279,57 @@ class HomeViewModel(
     // edit before saving
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
+        // The user's own name for a place they've logged before, otherwise Google's
+        val name = placeSearch.nameFor(prediction)
         _uiState.update {
             it.copy(
-                restaurantName = prediction.name,
+                restaurantName = name,
                 selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
                 longitude = null
             )
         }
         coordinatesJob = viewModelScope.launch {
-            val coordinates = placeSearch.select(prediction, fieldText = prediction.name)
+            val coordinates = placeSearch.select(prediction, fieldText = name)
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
                 if (it.selectedPlace?.placeId == prediction.placeId) {
                     it.copy(latitude = coordinates?.latitude, longitude = coordinates?.longitude)
+                } else it
+            }
+        }
+    }
+
+    // Fills in the name used on the last visit, and links the place the past visits are linked
+    // to, if any. No API call: the place ID is already saved.
+    private fun onHistorySelected(history: RestaurantHistory) {
+        coordinatesJob?.cancel()
+        val name = history.name
+        _uiState.update {
+            it.copy(
+                restaurantName = name,
+                selectedPlace = history.placeId?.let { placeId -> SelectedPlace(placeId) },
+                latitude = null,
+                longitude = null
+            )
+        }
+        placeSearch.onHistoryPicked(fieldText = name)
+    }
+
+    // A place linked from history has only its ID, so its address is looked up when the user
+    // taps "Show address", as each lookup is billed (Place Details Essentials)
+    private fun showPlaceAddress() {
+        val place = _uiState.value.selectedPlace ?: return
+        if (place.hasDetails || place.isLoading) return
+        val placeId = place.placeId
+
+        _uiState.update { it.copy(selectedPlace = place.copy(isLoading = true, lookupFailed = false)) }
+        viewModelScope.launch {
+            val details = placesRepository.fetchPlaceDetails(placeId)
+            _uiState.update {
+                // Skip if the user unlinked or changed the place meanwhile
+                if (it.selectedPlace?.placeId == placeId) {
+                    it.copy(selectedPlace = SelectedPlace.from(placeId, details))
                 } else it
             }
         }
@@ -321,7 +369,7 @@ class HomeViewModel(
                     billType = if (partySize > 1) state.billType else BillType.SPLIT,
                     // Whatever is in the name field (filled from a picked place, possibly edited);
                     // the place's address is never saved
-                    restaurantName = state.restaurantName,
+                    restaurantName = state.restaurantName.collapseWhitespace(),
                     address = null,
                     review = state.review,
                     rating = state.rating,

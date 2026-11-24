@@ -55,13 +55,17 @@ fun ReviewPage(
         PlaceSearchField(
             query = uiState.restaurantName,
             predictions = uiState.predictions,
+            history = uiState.history,
+            visitedPlaces = uiState.visitedPlaces,
             selectedPlace = uiState.selectedPlace,
             isOffline = uiState.isOffline,
             searchFailed = uiState.searchFailed,
             onQueryChange = { onAction(HomeAction.onRestaurantQueryChange(it)) },
             onPlaceSelected = { onAction(HomeAction.onPlaceSelected(it)) },
+            onHistorySelected = { onAction(HomeAction.onHistorySelected(it)) },
             onClearPlace = { onAction(HomeAction.onClearPlace) },
             onFocused = { onAction(HomeAction.onRestaurantFieldFocus) },
+            onShowAddress = { onAction(HomeAction.onShowPlaceAddress) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
