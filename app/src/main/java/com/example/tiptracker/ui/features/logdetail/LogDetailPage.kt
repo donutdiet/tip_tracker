@@ -312,15 +312,20 @@ private fun PlaceAddress(
         return
     }
 
+    val iconSize = 16.dp
+    val iconGap = 4.dp
+    // Lines under the address start where the address text does, not under the icon
+    val textIndent = Modifier.padding(start = iconSize + iconGap)
+
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 painter = painterResource(R.drawable.location),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(iconSize)
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(iconGap))
             Text(
                 text = address,
                 style = MaterialTheme.typography.bodyMedium,
@@ -332,10 +337,11 @@ private fun PlaceAddress(
                 // May contain HTML links
                 text = AnnotatedString.fromHtml(it),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = textIndent
             )
         }
-        GoogleMapsAttribution()
+        GoogleMapsAttribution(modifier = textIndent)
     }
 }
 
