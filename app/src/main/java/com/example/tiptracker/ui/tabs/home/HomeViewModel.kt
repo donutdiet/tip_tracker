@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.helper.LocationProvider
 import com.example.tiptracker.data.model.BillType
+import com.example.tiptracker.data.model.placeNameChoices
 import com.example.tiptracker.data.model.RestaurantHistory
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.ConnectivityRepository
@@ -12,18 +13,24 @@ import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.data.repository.PlacesRepository
 import com.example.tiptracker.data.repository.SettingsRepository
+import com.example.tiptracker.ui.components.PlaceNamePrompt
 import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
 import com.example.tiptracker.ui.placesearch.SelectedPlace
 import com.example.tiptracker.utils.collapseWhitespace
 import com.example.tiptracker.utils.formatCurrency
 import com.example.tiptracker.utils.formatTipPercent
 import com.example.tiptracker.utils.roundToTwoDecimals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -53,6 +60,10 @@ data class HomeUiState(
     val searchFailed: Boolean = false,
     val isOffline: Boolean = false,
     val isSaving: Boolean = false,
+    // Set while a save waits on the user to pick the place's name
+    val placeNamePrompt: PlaceNamePrompt? = null,
+    // Names on the user's other logs at the linked place
+    val otherNamesAtPlace: List<String> = emptyList(),
     val tipPreset1Percent: Int = 10,
     val tipPreset2Percent: Int = 15,
 
@@ -146,6 +157,8 @@ sealed interface HomeAction {
     data class onDateChange(val date: String) : HomeAction
     data class onRatingChange(val rating: Double) : HomeAction
     data object saveLog : HomeAction
+    data class onPlaceNameChosen(val name: String) : HomeAction
+    data object onPlaceNameCancel : HomeAction
     data object clear : HomeAction
 }
 
@@ -154,6 +167,7 @@ sealed interface HomeEvent {
     data class ShowError(val message: String) : HomeEvent
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     private val logsRepository: LogRepository,
     settingsRepository: SettingsRepository,
@@ -173,17 +187,30 @@ class HomeViewModel(
     // In-flight lookup of the selected place's coordinates
     private var coordinatesJob: Job? = null
 
+    // Whether the user changed the name since the place was linked (or the log loaded)
+    private var nameEditedWhileLinked = false
+
+
     private val _uiState = MutableStateFlow(HomeUiState())
+    // Names on the user's other logs at the linked place, which saving renames
+    private val otherNamesAtPlace = _uiState
+        .map { it.selectedPlace?.placeId }
+        .distinctUntilChanged()
+        .flatMapLatest { placeId ->
+            placeId?.let { logsRepository.observeNamesAtPlace(it) } ?: flowOf(emptyList())
+        }
+
     val uiState: StateFlow<HomeUiState> = combine(
         _uiState,
-        settingsRepository.tipPreset1Percent,
-        settingsRepository.tipPreset2Percent,
+        combine(settingsRepository.tipPreset1Percent, settingsRepository.tipPreset2Percent, ::Pair),
         placeSearch.state,
-        connectivityRepository.status
-    ) { state, p1, p2, search, connection ->
+        connectivityRepository.status,
+        otherNamesAtPlace
+    ) { state, (p1, p2), search, connection, otherNames ->
         state.copy(
             tipPreset1Percent = p1,
             tipPreset2Percent = p2,
+            otherNamesAtPlace = otherNames,
             predictions = search.predictions,
             searchFailed = search.searchFailed,
             history = search.history,
@@ -263,6 +290,11 @@ class HomeViewModel(
             is HomeAction.onDateChange -> _uiState.update { it.copy(date = action.date) }
             is HomeAction.onRatingChange -> _uiState.update { it.copy(rating = action.rating) }
             is HomeAction.saveLog -> saveLog()
+            is HomeAction.onPlaceNameChosen -> {
+                _uiState.update { it.copy(restaurantName = action.name, placeNamePrompt = null) }
+                saveLog(namesConfirmed = true)
+            }
+            is HomeAction.onPlaceNameCancel -> _uiState.update { it.copy(placeNamePrompt = null) }
             is HomeAction.clear -> clearState()
         }
     }
@@ -271,6 +303,7 @@ class HomeViewModel(
     // search for while one is linked
     private fun onRestaurantQueryChange(query: String) {
         val placeLinked = _uiState.value.selectedPlace != null
+        if (placeLinked) nameEditedWhileLinked = true
         _uiState.update { it.copy(restaurantName = query) }
         if (!placeLinked) placeSearch.onQueryChange(query)
     }
@@ -279,6 +312,7 @@ class HomeViewModel(
     // edit before saving
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
+        nameEditedWhileLinked = false
         // The user's own name for a place they've logged before, otherwise Google's
         val name = placeSearch.nameFor(prediction)
         _uiState.update {
@@ -304,6 +338,7 @@ class HomeViewModel(
     // to, if any. No API call: the place ID is already saved.
     private fun onHistorySelected(history: RestaurantHistory) {
         coordinatesJob?.cancel()
+        nameEditedWhileLinked = false
         val name = history.name
         _uiState.update {
             it.copy(
@@ -343,7 +378,8 @@ class HomeViewModel(
         placeSearch.onPlaceCleared(_uiState.value.restaurantName)
     }
 
-    private fun saveLog() {
+    // [namesConfirmed]: the user already picked the place's name in the dialog
+    private fun saveLog(namesConfirmed: Boolean = false) {
         if (_uiState.value.isSaving) return
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -357,6 +393,11 @@ class HomeViewModel(
 
                 if (bill < 0.0 || tipPercent < 0.0 || partySize < 1) {
                     _events.send(HomeEvent.ShowError("Please enter a valid bill, tip percent, and party size."))
+                    return@launch
+                }
+                // A linked place shares one name across its logs, so it needs one
+                if (state.selectedPlace != null && state.restaurantName.isBlank()) {
+                    _events.send(HomeEvent.ShowError("Logs linked to a place need a name. Enter one or unlink the place."))
                     return@launch
                 }
 
@@ -378,6 +419,14 @@ class HomeViewModel(
                     latitude = state.latitude,
                     longitude = state.longitude
                 )
+                if (!namesConfirmed) {
+                    val prompt = log.placeId?.let { placeNamePrompt(log.restaurantName) }
+                    if (prompt != null) {
+                        _uiState.update { it.copy(placeNamePrompt = prompt) }
+                        return@launch
+                    }
+                }
+                // Linked to a place, this also renames the place's other logs
                 val id = logsRepository.insertLog(log)
                 clearState()
                 _events.send(HomeEvent.LogSaved(id))
@@ -394,8 +443,19 @@ class HomeViewModel(
         }
     }
 
+
+    // A linked place has one name: if the place's other logs use a different one, the user picks
+    // which name they all take. A name the user changed starts selected; otherwise (e.g. editing
+    // an old log's bill) the most used one does, so a quick Save doesn't rename the rest.
+    private fun placeNamePrompt(name: String): PlaceNamePrompt? {
+        val choices = placeNameChoices(uiState.value.otherNamesAtPlace, name) ?: return null
+        val initial = if (nameEditedWhileLinked) choices.first() else choices.maxBy { it.count }
+        return PlaceNamePrompt(choices, initial.name)
+    }
+
     private fun clearState() {
         coordinatesJob?.cancel()
+        nameEditedWhileLinked = false
         placeSearch.reset()
         _uiState.value = HomeUiState()
     }

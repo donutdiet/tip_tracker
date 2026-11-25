@@ -19,6 +19,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.tiptracker.ui.components.PlaceNameDialog
 import com.example.tiptracker.ui.tabs.home.pages.ReviewPage
 import com.example.tiptracker.ui.tabs.home.pages.TipCalculatorPage
 import com.example.tiptracker.utils.ObserveAsEvents
@@ -55,6 +56,14 @@ fun HomeRoot(
 
     BackHandler(enabled = currentPage > 0) {
         currentPage = 0
+    }
+
+    uiState.placeNamePrompt?.let { prompt ->
+        PlaceNameDialog(
+            prompt = prompt,
+            onSave = { viewModel.onAction(HomeAction.onPlaceNameChosen(it)) },
+            onCancel = { viewModel.onAction(HomeAction.onPlaceNameCancel) }
+        )
     }
 
     AnimatedContent(

@@ -20,14 +20,25 @@ class LogRepository(
 
     fun getLogById(id: Int): Flow<Log?> = logDao.getLogById(id)
 
+    /**
+     * Saves [log]. A linked place has one name across all its logs, so a log linked to a place
+     * renames the place's other logs too. The forms require a name on linked logs.
+     */
     suspend fun insertLog(log: Log): Int {
-        val savedLogId = logDao.insertLog(log)
+        val savedLogId = if (log.placeId != null) logDao.insertLogNamingPlace(log) else logDao.insertLog(log)
         return savedLogId.toInt()
     }
 
     suspend fun updateLog(log: Log) {
-        logDao.updateLog(log)
+        if (log.placeId != null) logDao.updateLogNamingPlace(log) else logDao.updateLog(log)
     }
+
+    /**
+     * The names on the user's logs at [placeId], except [editingLogId] (the log being edited),
+     * so a form can say which of them saving will rename.
+     */
+    fun observeNamesAtPlace(placeId: String, editingLogId: Int? = null): Flow<List<String>> =
+        logDao.observeNamesAtPlace(placeId, excludeId = editingLogId ?: -1)
 
     suspend fun deleteLogById(id: Int): Int {
         val deletedCount = logDao.deleteLogById(id)

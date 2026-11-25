@@ -5,22 +5,29 @@ import androidx.lifecycle.viewModelScope
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.helper.LocationProvider
 import com.example.tiptracker.data.model.BillType
+import com.example.tiptracker.data.model.placeNameChoices
 import com.example.tiptracker.data.model.RestaurantHistory
 import com.example.tiptracker.data.repository.ConnectionStatus
 import com.example.tiptracker.data.repository.ConnectivityRepository
 import com.example.tiptracker.data.repository.LogRepository
 import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.data.repository.PlacesRepository
+import com.example.tiptracker.ui.components.PlaceNamePrompt
 import com.example.tiptracker.ui.placesearch.PlaceSearchDelegate
 import com.example.tiptracker.ui.placesearch.SelectedPlace
 import com.example.tiptracker.utils.collapseWhitespace
 import com.example.tiptracker.utils.roundToTwoDecimals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -52,6 +59,10 @@ data class EditLogUiState(
     val isNotFound: Boolean = false,
     val errorMessage: String? = null,
     val isUpdating: Boolean = false,
+    // Set while a save waits on the user to pick the place's name
+    val placeNamePrompt: PlaceNamePrompt? = null,
+    // Names on the user's other logs at the linked place
+    val otherNamesAtPlace: List<String> = emptyList(),
     val editsMade: Boolean = false
 ) {
     val tipPercent: Double
@@ -92,6 +103,8 @@ sealed interface EditLogAction {
     data class DateChanged(val date: String) : EditLogAction
     data class RatingChanged(val rating: Double) : EditLogAction
     data object Update : EditLogAction
+    data class PlaceNameChosen(val name: String) : EditLogAction
+    data object PlaceNameCancel : EditLogAction
 }
 
 sealed interface EditLogEvent {
@@ -99,6 +112,7 @@ sealed interface EditLogEvent {
     data class ShowError(val message: String) : EditLogEvent
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EditLogViewModel(
     private val logId: Int,
     private val logsRepository: LogRepository,
@@ -121,13 +135,27 @@ class EditLogViewModel(
     // In-flight lookup of the selected place's coordinates
     private var coordinatesJob: Job? = null
 
+    // Whether the user changed the name since the place was linked (or the log loaded)
+    private var nameEditedWhileLinked = false
+
     private val _uiState = MutableStateFlow(EditLogUiState())
+    // Names on the user's other logs at the linked place, which saving renames
+    private val otherNamesAtPlace = _uiState
+        .map { it.selectedPlace?.placeId }
+        .distinctUntilChanged()
+        .flatMapLatest { placeId ->
+            placeId?.let { logsRepository.observeNamesAtPlace(it, editingLogId = logId) }
+                ?: flowOf(emptyList())
+        }
+
     val uiState: StateFlow<EditLogUiState> = combine(
         _uiState,
         placeSearch.state,
-        connectivityRepository.status
-    ) { state, search, connection ->
+        connectivityRepository.status,
+        otherNamesAtPlace
+    ) { state, search, connection, otherNames ->
         state.copy(
+            otherNamesAtPlace = otherNames,
             predictions = search.predictions,
             searchFailed = search.searchFailed,
             history = search.history,
@@ -150,6 +178,11 @@ class EditLogViewModel(
     fun onAction(action: EditLogAction) {
         when (action) {
             EditLogAction.Update -> updateLog()
+            is EditLogAction.PlaceNameChosen -> {
+                _uiState.update { it.copy(restaurantName = action.name, placeNamePrompt = null) }
+                updateLog(namesConfirmed = true)
+            }
+            EditLogAction.PlaceNameCancel -> _uiState.update { it.copy(placeNamePrompt = null) }
             is EditLogAction.BillChanged -> edit { it.copy(bill = action.bill) }
             is EditLogAction.TipAmountChanged -> edit { it.copy(tipAmount = action.tipAmount) }
             is EditLogAction.PartySizeChanged -> edit { it.copy(partySize = action.partySize) }
@@ -182,6 +215,7 @@ class EditLogViewModel(
     // search for while one is linked
     private fun onRestaurantQueryChange(query: String) {
         val placeLinked = _uiState.value.selectedPlace != null
+        if (placeLinked) nameEditedWhileLinked = true
         edit { it.copy(restaurantName = query) }
         if (!placeLinked) placeSearch.onQueryChange(query)
     }
@@ -190,6 +224,7 @@ class EditLogViewModel(
     // edit before saving
     private fun onPlaceSelected(prediction: PlacePrediction) {
         coordinatesJob?.cancel()
+        nameEditedWhileLinked = false
         // The user's own name for a place they've logged before, otherwise Google's
         val name = placeSearch.nameFor(prediction)
         edit {
@@ -215,6 +250,7 @@ class EditLogViewModel(
     // to, if any. No API call: the place ID is already saved.
     private fun onHistorySelected(history: RestaurantHistory) {
         coordinatesJob?.cancel()
+        nameEditedWhileLinked = false
         val name = history.name
         edit {
             it.copy(
@@ -258,6 +294,7 @@ class EditLogViewModel(
                     editsMade = false
                 )
 
+                nameEditedWhileLinked = false
                 initialUiState = loadedState
                 _uiState.value = loadedState
 
@@ -271,6 +308,15 @@ class EditLogViewModel(
                 android.util.Log.e("EditLogViewModel", "Error loading log detail", e)
             }
         }
+    }
+
+    // A linked place has one name: if the place's other logs use a different one, the user picks
+    // which name they all take. A name the user changed starts selected; otherwise (e.g. editing
+    // an old log's bill) the most used one does, so a quick Save doesn't rename the rest.
+    private fun placeNamePrompt(name: String): PlaceNamePrompt? {
+        val choices = placeNameChoices(uiState.value.otherNamesAtPlace, name) ?: return null
+        val initial = if (nameEditedWhileLinked) choices.first() else choices.maxBy { it.count }
+        return PlaceNamePrompt(choices, initial.name)
     }
 
     private fun clearPlace() {
@@ -301,9 +347,9 @@ class EditLogViewModel(
         }
     }
 
-    private fun updateLog() {
+    // [namesConfirmed]: the user already picked the place's name in the dialog
+    private fun updateLog(namesConfirmed: Boolean = false) {
         if (_uiState.value.isUpdating) return
-
         viewModelScope.launch {
             _uiState.update { it.copy(isUpdating = true) }
             try {
@@ -318,28 +364,40 @@ class EditLogViewModel(
                     _events.send(EditLogEvent.ShowError("Please enter a valid bill, tip amount, and party size."))
                     return@launch
                 }
+                // A linked place shares one name across its logs, so it needs one
+                if (state.selectedPlace != null && state.restaurantName.isBlank()) {
+                    _events.send(EditLogEvent.ShowError("Logs linked to a place need a name. Enter one or unlink the place."))
+                    return@launch
+                }
 
-                logsRepository.updateLog(
-                    Log(
-                        id = logId,
-                        bill = bill,
-                        tipPercent = state.tipPercent,
-                        total = state.total,
-                        partySize = partySize,
-                        // The toggle is hidden for a party of one, so don't keep a stale choice
-                        billType = if (partySize > 1) state.billType else BillType.SPLIT,
-                        restaurantName = state.restaurantName.collapseWhitespace(),
-                        // Addresses are no longer shown or entered (Google's terms don't allow
-                        // saving a place's), so any old typed one is cleared on save
-                        address = null,
-                        review = state.review,
-                        rating = state.rating,
-                        date = state.date,
-                        placeId = state.selectedPlace?.placeId,
-                        latitude = state.latitude,
-                        longitude = state.longitude
-                    )
+                val log = Log(
+                    id = logId,
+                    bill = bill,
+                    tipPercent = state.tipPercent,
+                    total = state.total,
+                    partySize = partySize,
+                    // The toggle is hidden for a party of one, so don't keep a stale choice
+                    billType = if (partySize > 1) state.billType else BillType.SPLIT,
+                    restaurantName = state.restaurantName.collapseWhitespace(),
+                    // Addresses are no longer shown or entered (Google's terms don't allow
+                    // saving a place's), so any old typed one is cleared on save
+                    address = null,
+                    review = state.review,
+                    rating = state.rating,
+                    date = state.date,
+                    placeId = state.selectedPlace?.placeId,
+                    latitude = state.latitude,
+                    longitude = state.longitude
                 )
+                if (!namesConfirmed) {
+                    val prompt = log.placeId?.let { placeNamePrompt(log.restaurantName) }
+                    if (prompt != null) {
+                        _uiState.update { it.copy(placeNamePrompt = prompt) }
+                        return@launch
+                    }
+                }
+                // Linked to a place, this also renames the place's other logs
+                logsRepository.updateLog(log)
                 _events.send(EditLogEvent.LogUpdated)
             } catch (e: Exception) {
                 _events.send(EditLogEvent.ShowError("Couldn't update your log. Please try again."))
@@ -349,6 +407,7 @@ class EditLogViewModel(
             }
         }
     }
+
 
     private fun checkIfEditsMade(state: EditLogUiState): Boolean {
         val initial = initialUiState ?: return false

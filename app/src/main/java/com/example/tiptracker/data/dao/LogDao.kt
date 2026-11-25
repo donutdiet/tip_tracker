@@ -3,6 +3,7 @@ package com.example.tiptracker.data.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.LogStats
@@ -30,6 +31,28 @@ interface LogDao {
     // History suggestions; matching ignores punctuation in repository code.
     @Query("SELECT id, restaurant_name AS name, place_id AS placeId, date FROM log")
     fun getRestaurantVisits(): Flow<List<RestaurantVisit>>
+
+    // One name per linked place: the names on a place's logs, leaving out the log being
+    // edited (excludeId), and renaming them all
+    @Query("SELECT restaurant_name FROM log WHERE place_id = :placeId AND id != :excludeId")
+    fun observeNamesAtPlace(placeId: String, excludeId: Int): Flow<List<String>>
+
+    @Query("UPDATE log SET restaurant_name = :name WHERE place_id = :placeId")
+    suspend fun renamePlace(placeId: String, name: String): Int
+
+    // Saves a log and gives every log at its place the log's name, all or nothing
+    @Transaction
+    suspend fun insertLogNamingPlace(log: Log): Long {
+        val id = insertLog(log)
+        renamePlace(checkNotNull(log.placeId), log.restaurantName)
+        return id
+    }
+
+    @Transaction
+    suspend fun updateLogNamingPlace(log: Log) {
+        updateLog(log)
+        renamePlace(checkNotNull(log.placeId), log.restaurantName)
+    }
 
     // Stats profile section. Bill, total and tip are whole-party amounts, so a separate check
     // (the user's own check only) is extrapolated to the party by assuming everyone spent the
