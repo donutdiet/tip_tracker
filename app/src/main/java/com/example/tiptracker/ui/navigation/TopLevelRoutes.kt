@@ -15,6 +15,8 @@ import kotlinx.serialization.Serializable
     @Serializable data class EditLog(val id: Int) : RootKey
 
     @Serializable data class LogImageManager(val id: Int) : RootKey
+
+    @Serializable data object Map : RootKey
 }
 
 @Serializable sealed interface TabKey : NavKey {

@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.tiptracker.R
 import com.example.tiptracker.ui.components.ConfirmationDialog
+import com.example.tiptracker.ui.components.PlaceNameDialog
 import com.example.tiptracker.utils.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -72,6 +73,14 @@ fun EditLogRoot(
             icon = R.drawable.edit,
             destructive = true,
             destructiveIcon = false
+        )
+    }
+
+    uiState.placeNamePrompt?.let { prompt ->
+        PlaceNameDialog(
+            prompt = prompt,
+            onSave = { viewModel.onAction(EditLogAction.PlaceNameChosen(it)) },
+            onCancel = { viewModel.onAction(EditLogAction.PlaceNameCancel) }
         )
     }
 

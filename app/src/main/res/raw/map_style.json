@@ -1,0 +1,14 @@
+[
+  {
+    "featureType": "poi.business",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "stylers": [{ "saturation": -45 }, { "lightness": 8 }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }]
+  }
+]

@@ -1,6 +1,24 @@
 package com.example.tiptracker.ui.features.logdetail
 
+import com.example.tiptracker.ui.theme.card
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.util.lerp
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.sign
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
@@ -48,7 +66,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +78,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
+import com.example.tiptracker.ui.components.PlaceAddress
 import com.example.tiptracker.data.model.BillType
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
@@ -70,11 +89,6 @@ import com.example.tiptracker.utils.formatTipPercent
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.fromHtml
-import androidx.compose.ui.semantics.Role
-import com.example.tiptracker.ui.components.GoogleMapsAttribution
-import com.example.tiptracker.data.repository.PlaceDetails
 
 @Composable
 fun LogDetailPage(
@@ -172,7 +186,7 @@ private fun LogStatsCard(
     Card(
         shape = RoundedCornerShape(4.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.card)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -269,79 +283,6 @@ private fun LogStatsCard(
                 )
             }
         }
-    }
-}
-
-/**
- * A linked place's address. Looking it up is billed, so it's fetched only once the user taps
- * "Show address", then shown with the attributions Google requires.
- */
-@Composable
-private fun PlaceAddress(
-    details: PlaceDetails?,
-    isLoading: Boolean,
-    onShow: () -> Unit
-) {
-    val address = details?.address
-    if (address == null) {
-        val color = if (isLoading) {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        } else {
-            MaterialTheme.colorScheme.primary
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable(enabled = !isLoading, role = Role.Button, onClick = onShow)
-                .padding(vertical = 4.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.location),
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = if (isLoading) "Loading address…" else "Show address",
-                style = MaterialTheme.typography.bodyMedium,
-                color = color
-            )
-        }
-        return
-    }
-
-    val iconSize = 16.dp
-    val iconGap = 4.dp
-    // Lines under the address start where the address text does, not under the icon
-    val textIndent = Modifier.padding(start = iconSize + iconGap)
-
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painter = painterResource(R.drawable.location),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(iconSize)
-            )
-            Spacer(modifier = Modifier.width(iconGap))
-            Text(
-                text = address,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        details.attributions.forEach {
-            Text(
-                // May contain HTML links
-                text = AnnotatedString.fromHtml(it),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = textIndent
-            )
-        }
-        GoogleMapsAttribution(modifier = textIndent)
     }
 }
 
@@ -468,6 +409,9 @@ private fun FullScreenImageDialog(
         pageCount = { imageFiles.size }
     )
     var currentScale by remember { mutableFloatStateOf(1f) }
+    // How far the current photo has been dragged toward closing, 0 to 1. Read only while
+    // drawing, so dragging doesn't recompose the dialog.
+    var dismissProgress by remember { mutableFloatStateOf(0f) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -479,7 +423,10 @@ private fun FullScreenImageDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.95f))
+                // Fades out as the photo is dragged away, revealing the screen behind
+                .drawBehind {
+                    drawRect(Color.Black.copy(alpha = 0.95f * (1f - dismissProgress)))
+                }
         ) {
             HorizontalPager(
                 state = pagerState,
@@ -514,6 +461,11 @@ private fun FullScreenImageDialog(
                             if (pagerState.currentPage == page) {
                                 currentScale = scale
                             }
+                        },
+                        onDismissProgress = { progress ->
+                            if (pagerState.currentPage == page) {
+                                dismissProgress = progress
+                            }
                         }
                     )
                 }
@@ -527,6 +479,7 @@ private fun FullScreenImageDialog(
                     // The dialog draws edge to edge, so keep the bar clear of the status bar
                     .statusBarsPadding()
                     .fillMaxWidth()
+                    .graphicsLayer { alpha = 1f - dismissProgress }
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Text(
@@ -545,44 +498,87 @@ private fun FullScreenImageDialog(
     }
 }
 
+/**
+ * A photo that can be zoomed with a pinch (toward the fingers) or a double-tap (toward the
+ * tap), panned when zoomed, and, at normal size, dragged up or down to close. Tapping outside
+ * the photo closes it too.
+ */
 @Composable
 private fun ZoomableImage(
     imageFile: File,
     pageKey: Any,
     onDismiss: () -> Unit,
     onScaleChanged: (Float) -> Unit,
+    onDismissProgress: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var scale by remember(pageKey) { mutableFloatStateOf(1f) }
     var offset by remember(pageKey) { mutableStateOf(Offset.Zero) }
+    // Vertical distance the photo has been dragged toward closing, in pixels
+    var dismissDrag by remember(pageKey) { mutableFloatStateOf(0f) }
+    // The full-screen area that takes the gestures, and the photo's laid-out size within it,
+    // which is its on-screen size before zooming (the box matches the photo's aspect ratio once
+    // it loads)
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    var imageSize by remember { mutableStateOf(IntSize.Zero) }
     var imageAspectRatio by remember { mutableFloatStateOf(0f) }
+    val scope = rememberCoroutineScope()
+    val dismissVelocity = with(LocalDensity.current) { DISMISS_VELOCITY.toPx() }
 
     LaunchedEffect(scale) {
         onScaleChanged(scale)
     }
+    LaunchedEffect(Unit) {
+        snapshotFlow {
+            val height = containerSize.height
+            if (height == 0) 0f else (abs(dismissDrag) / (height * DISMISS_FADE_DISTANCE)).coerceIn(0f, 1f)
+        }.collect(onDismissProgress)
+    }
 
-    val transformState = rememberTransformableState { zoomChange, panChange, _ ->
-        val targetScale = (scale * zoomChange).coerceIn(1f, 4.5f)
-        if (targetScale <= 1f) {
+    // Keeps the zoomed photo covering its box: it may move at most the amount it overhangs
+    fun clampOffset(value: Offset, atScale: Float): Offset {
+        val maxX = imageSize.width / 2f * (atScale - 1f)
+        val maxY = imageSize.height / 2f * (atScale - 1f)
+        return Offset(value.x.coerceIn(-maxX, maxX), value.y.coerceIn(-maxY, maxY))
+    }
+
+    // The offset that zooms to [newScale] while keeping the photo point at [fromCenter] (a
+    // position relative to the container's center, which the zoom scales around) in place
+    fun zoomedOffset(fromCenter: Offset, newScale: Float, pan: Offset = Offset.Zero): Offset =
+        clampOffset(fromCenter + pan - (fromCenter - offset) * (newScale / scale), newScale)
+
+    // Zooms toward the fingers: the point of the photo under them stays under them. Gestures
+    // are read on the full-screen container, outside the zoom, so they're in screen pixels,
+    // panning follows the fingers one to one, and they work anywhere the zoomed photo shows.
+    val transformState = rememberTransformableState { centroid, zoomChange, panChange, _ ->
+        val newScale = (scale * zoomChange).coerceIn(1f, MAX_ZOOM)
+        if (newScale <= 1f || imageSize == IntSize.Zero) {
             scale = 1f
             offset = Offset.Zero
-        } else {
-            scale = targetScale
-            if (containerSize.width > 0 && containerSize.height > 0 && imageAspectRatio > 0f) {
-                val containerAspect = containerSize.width.toFloat() / containerSize.height.toFloat()
-                val (renderedW, renderedH) = if (imageAspectRatio > containerAspect) {
-                    containerSize.width.toFloat() to (containerSize.width.toFloat() / imageAspectRatio)
-                } else {
-                    (containerSize.height.toFloat() * imageAspectRatio) to containerSize.height.toFloat()
-                }
-                val maxOffsetX = (renderedW * (scale - 1f)) / 2f
-                val maxOffsetY = (renderedH * (scale - 1f)) / 2f
+            return@rememberTransformableState
+        }
+        val center = Offset(containerSize.width / 2f, containerSize.height / 2f)
+        offset = zoomedOffset(centroid - center, newScale, panChange)
+        scale = newScale
+    }
 
-                val panMultiplier = 1.5f
-                val newX = (offset.x + panChange.x * panMultiplier).coerceIn(-maxOffsetX, maxOffsetX)
-                val newY = (offset.y + panChange.y * panMultiplier).coerceIn(-maxOffsetY, maxOffsetY)
-                offset = Offset(newX, newY)
+    // Double-tap: zoom in toward the tap, or back out if already zoomed. [tap] is in the photo
+    // box's own (unzoomed) coordinates.
+    fun toggleZoom(tap: Offset) {
+        if (imageSize == IntSize.Zero) return
+        val startScale = scale
+        val startOffset = offset
+        val endScale = if (scale > 1f) 1f else DOUBLE_TAP_ZOOM
+        val endOffset = if (endScale == 1f) {
+            Offset.Zero
+        } else {
+            val half = Offset(imageSize.width / 2f, imageSize.height / 2f)
+            zoomedOffset((tap - half) * scale + offset, endScale)
+        }
+        scope.launch {
+            animate(0f, 1f, animationSpec = tween(ZOOM_ANIMATION_MS)) { t, _ ->
+                scale = lerp(startScale, endScale, t)
+                offset = lerp(startOffset, endOffset, t)
             }
         }
     }
@@ -591,44 +587,65 @@ private fun ZoomableImage(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxSize()
-            .onGloballyPositioned { containerSize = it.size }
+            .onSizeChanged { containerSize = it }
+            // Outside transformable, so a two-finger pinch is claimed by the zoom first. Claims
+            // only clearly vertical drags; sideways ones go to the pager for the next photo.
+            .draggable(
+                state = rememberDraggableState { delta -> dismissDrag += delta },
+                orientation = Orientation.Vertical,
+                enabled = scale == 1f,
+                onDragStopped = { velocity ->
+                    val height = containerSize.height.toFloat()
+                    val closing = abs(dismissDrag) > height * DISMISS_DISTANCE ||
+                        abs(velocity) > dismissVelocity
+                    if (closing) {
+                        // Off the screen in the direction it was going, then close
+                        val direction = if (dismissDrag != 0f) sign(dismissDrag) else sign(velocity)
+                        animate(
+                            dismissDrag,
+                            direction * height,
+                            animationSpec = tween(DISMISS_ANIMATION_MS)
+                        ) { value, _ -> dismissDrag = value }
+                        onDismiss()
+                    } else {
+                        animate(dismissDrag, 0f, animationSpec = spring()) { value, _ ->
+                            dismissDrag = value
+                        }
+                    }
+                }
+            )
+            .transformable(
+                state = transformState,
+                canPan = { scale > 1f }
+            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onDismiss
             )
     ) {
-        val imageModifier = if (imageAspectRatio > 0f) {
-            Modifier
-                .aspectRatio(imageAspectRatio)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { /* consume click on photo */ }
-                )
-        } else {
-            Modifier
-                .fillMaxSize()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { /* consume click on photo */ }
-                )
-        }
-
         Box(
             contentAlignment = Alignment.Center,
-            modifier = imageModifier
+            modifier = Modifier
+                .then(
+                    if (imageAspectRatio > 0f) {
+                        Modifier.aspectRatio(imageAspectRatio)
+                    } else {
+                        Modifier.fillMaxSize()
+                    }
+                )
+                .onSizeChanged { imageSize = it }
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
                     translationX = offset.x
-                    translationY = offset.y
+                    translationY = offset.y + dismissDrag
                 }
-                .transformable(
-                    state = transformState,
-                    canPan = { scale > 1f }
-                )
+                // Inside the zoom, so the tap area grows with the photo. Also keeps taps on the
+                // photo from reaching the container, where a tap closes the viewer.
+                .pointerInput(Unit) {
+                    detectTapGestures(onDoubleTap = { toggleZoom(it) }, onTap = {})
+                }
         ) {
             SubcomposeAsyncImage(
                 model = imageFile,
@@ -687,3 +704,13 @@ fun LogDetailPagePreview() {
         )
     }
 }
+
+private const val MAX_ZOOM = 4.5f
+private const val DOUBLE_TAP_ZOOM = 2.5f
+private const val ZOOM_ANIMATION_MS = 250
+// Dragging a photo this fraction of the screen height (or flicking it) closes the viewer;
+// the background is fully faded at DISMISS_FADE_DISTANCE
+private const val DISMISS_DISTANCE = 0.2f
+private const val DISMISS_FADE_DISTANCE = 0.5f
+private val DISMISS_VELOCITY = 1000.dp // per second
+private const val DISMISS_ANIMATION_MS = 150

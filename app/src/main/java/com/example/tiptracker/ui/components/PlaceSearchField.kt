@@ -2,13 +2,15 @@ package com.example.tiptracker.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
@@ -24,6 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -55,27 +59,35 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
+import com.example.tiptracker.data.model.RestaurantHistory
 import com.example.tiptracker.data.repository.PlacePrediction
 import com.example.tiptracker.ui.placesearch.SelectedPlace
 import com.example.tiptracker.ui.theme.TipTrackerTheme
+import com.example.tiptracker.utils.formatDateForDisplay
 import com.example.tiptracker.utils.rememberLocationPermissionPrompt
 
 /**
- * Restaurant name input with Google Maps suggestions. Whatever the user types is the name that
- * gets saved; picking a suggestion only links the log to that place ([selectedPlace]), whose
- * official name and address are shown below for reference. Typing never unlinks the place;
- * the Unlink button does. Offline (or if a search fails) it is just a free-text field.
+ * Restaurant name input with suggestions: the user's past restaurants ([history]) first, then
+ * Google Maps places. Whatever is in the field is the name that gets saved; picking a Google
+ * suggestion fills in its name and links the log to that place ([selectedPlace]), whose
+ * official name and address are shown below for reference. Picking a past restaurant fills in
+ * the name used last time and links its place, if it has one. Typing never unlinks the place;
+ * the Unlink button does. Offline (or if a search fails) only past restaurants are suggested.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaceSearchField(
     query: String,
     predictions: List<PlacePrediction>,
+    history: List<RestaurantHistory>,
+    // The user's past visits to places in [predictions], by place ID
+    visitedPlaces: Map<String, RestaurantHistory>,
     selectedPlace: SelectedPlace?,
     isOffline: Boolean,
     searchFailed: Boolean,
     onQueryChange: (String) -> Unit,
     onPlaceSelected: (PlacePrediction) -> Unit,
+    onHistorySelected: (RestaurantHistory) -> Unit,
     onClearPlace: () -> Unit,
     modifier: Modifier = Modifier,
     // Called when the field gains focus with no place linked; may search the current text
@@ -93,14 +105,15 @@ fun PlaceSearchField(
         if (query != fieldValue.text) fieldValue = TextFieldValue(query, TextRange(query.length))
     }
     // No suggestions while a place is linked; Unlink first to pick another
-    val showSuggestions = expanded && selectedPlace == null && predictions.isNotEmpty()
+    val showSuggestions = expanded && selectedPlace == null &&
+        (predictions.isNotEmpty() || history.isNotEmpty())
     val promptForLocation = rememberLocationPermissionPrompt()
 
     // Search status only matters while the user can still pick a place
     val searching = selectedPlace == null
     val supportingText = when {
         searching && searchFailed -> "Couldn't load suggestions. You can still type the name."
-        searching && isOffline -> "Restaurant search isn't available offline."
+        searching && isOffline -> "Google suggestions aren't available offline."
         else -> null
     }
 
@@ -159,12 +172,40 @@ fun PlaceSearchField(
                 onDismissRequest = { expanded = false },
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow
             ) {
+                if (history.isNotEmpty()) {
+                    SuggestionsHeader {
+                        Text(
+                            text = "From your logs",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                history.forEach { past ->
+                    DropdownMenuItem(
+                        text = { HistorySuggestion(past) },
+                        onClick = {
+                            expanded = false
+                            onHistorySelected(past)
+                        }
+                    )
+                }
+                if (predictions.isNotEmpty()) {
+                    if (history.isNotEmpty()) HorizontalDivider()
+                    // Required by the Places policies, as predictions aren't shown on a Google
+                    // map. As the header, it labels exactly the rows that came from Google.
+                    SuggestionsHeader {
+                        GoogleMapsAttribution(background = MaterialTheme.colorScheme.surfaceContainerLow)
+                    }
+                }
                 predictions.forEach { prediction ->
+                    val visited = visitedPlaces[prediction.placeId]
                     DropdownMenuItem(
                         text = {
-                            Column {
+                            Column(modifier = Modifier.padding(vertical = SUGGESTION_VERTICAL_PADDING)) {
                                 Text(
-                                    text = prediction.name,
+                                    // A place the user has logged shows the name they use for it
+                                    text = visited?.name ?: prediction.name,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
@@ -176,6 +217,15 @@ fun PlaceSearchField(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
+                                visited?.let {
+                                    Text(
+                                        text = visitsText(it),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
                         },
                         onClick = {
@@ -184,16 +234,6 @@ fun PlaceSearchField(
                         }
                     )
                 }
-                // Required by the Places policies: predictions aren't shown on a Google map
-                HorizontalDivider()
-                GoogleMapsAttribution(
-                    background = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // No bottom padding: the menu already adds 8dp below its last item
-                        .padding(start = 16.dp, end = 16.dp, top = 6.dp)
-                        .wrapContentWidth(Alignment.End)
-                )
             }
         }
 
@@ -208,6 +248,53 @@ fun PlaceSearchField(
                 }
             )
         }
+    }
+}
+
+/** Labels a section of the suggestions list, lined up with the rows' text. */
+@Composable
+private fun SuggestionsHeader(content: @Composable () -> Unit) {
+    // The rows' own horizontal padding, so the header starts where their text does
+    val rowPadding = MenuDefaults.DropdownMenuItemContentPadding
+    val layoutDirection = LocalLayoutDirection.current
+    Box(
+        modifier = Modifier.padding(
+            start = rowPadding.calculateStartPadding(layoutDirection),
+            end = rowPadding.calculateEndPadding(layoutDirection),
+            top = 8.dp,
+            bottom = 4.dp
+        )
+    ) {
+        content()
+    }
+}
+
+/** A past restaurant: its name, then how often and when it was last visited. */
+@Composable
+private fun HistorySuggestion(history: RestaurantHistory) {
+    Column(modifier = Modifier.padding(vertical = SUGGESTION_VERTICAL_PADDING)) {
+        Text(
+            text = history.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = visitsText(history),
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun visitsText(history: RestaurantHistory): String {
+    val lastVisited = formatDateForDisplay(history.lastVisited)
+    return if (history.visitCount == 1) {
+        "Visited $lastVisited"
+    } else {
+        "Visited ${history.visitCount}× · last $lastVisited"
     }
 }
 
@@ -346,6 +433,9 @@ private fun SelectedPlaceInfo(place: SelectedPlace, onShowAddress: () -> Unit, o
 }
 
 private val ICON_SIZE = 18.dp
+// Menu items center their content in a fixed-height row with no vertical padding, so a
+// three-line suggestion would touch its edges
+private val SUGGESTION_VERTICAL_PADDING = 4.dp
 private val CLEAR_MIN_HEIGHT = 32.dp
 
 @Preview(showBackground = true)
@@ -355,6 +445,8 @@ private fun PlaceSearchFieldPreview() {
         PlaceSearchField(
             query = "Pearl",
             predictions = emptyList(),
+            history = emptyList(),
+            visitedPlaces = emptyMap(),
             selectedPlace = SelectedPlace(
                 placeId = "id",
                 name = "The Pearl",
@@ -364,6 +456,7 @@ private fun PlaceSearchFieldPreview() {
             searchFailed = false,
             onQueryChange = {},
             onPlaceSelected = {},
+            onHistorySelected = {},
             onClearPlace = {}
         )
     }
@@ -376,11 +469,14 @@ private fun PlaceSearchFieldAddressOnlyPreview() {
         PlaceSearchField(
             query = "Pearl",
             predictions = emptyList(),
+            history = emptyList(),
+            visitedPlaces = emptyMap(),
             selectedPlace = SelectedPlace(placeId = "id", address = "123 Main St, Portland, OR"),
             isOffline = false,
             searchFailed = false,
             onQueryChange = {},
             onPlaceSelected = {},
+            onHistorySelected = {},
             onClearPlace = {}
         )
     }
@@ -393,11 +489,14 @@ private fun PlaceSearchFieldAddressHiddenPreview() {
         PlaceSearchField(
             query = "Pearl",
             predictions = emptyList(),
+            history = emptyList(),
+            visitedPlaces = emptyMap(),
             selectedPlace = SelectedPlace(placeId = "id"),
             isOffline = false,
             searchFailed = false,
             onQueryChange = {},
             onPlaceSelected = {},
+            onHistorySelected = {},
             onClearPlace = {}
         )
     }

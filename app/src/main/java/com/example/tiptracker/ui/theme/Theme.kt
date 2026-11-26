@@ -5,13 +5,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 
@@ -91,6 +97,29 @@ private val darkScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDark,
 )
 
+/**
+ * Colors Material's scheme has no role for. Light mode lifts cards and floating buttons off the
+ * page with shadows, which barely show in dark mode, so there they're lighter grays instead.
+ */
+@Immutable
+data class AppColors(
+    /** Cards in a list, like the logs. */
+    val card: Color,
+    /** Buttons and cards floating over content, like over the map. */
+    val floating: Color
+)
+
+private val lightAppColors = AppColors(card = backgroundLight, floating = Color.White)
+private val darkAppColors = AppColors(card = surfaceContainerDark, floating = surfaceContainerHighDark)
+
+private val LocalAppColors = staticCompositionLocalOf { lightAppColors }
+
+val ColorScheme.card: Color
+    @Composable @ReadOnlyComposable get() = LocalAppColors.current.card
+
+val ColorScheme.floating: Color
+    @Composable @ReadOnlyComposable get() = LocalAppColors.current.floating
+
 @Composable
 fun TipTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -137,10 +166,12 @@ fun TipTrackerTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        shapes = Shapes,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalAppColors provides if (darkTheme) darkAppColors else lightAppColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            shapes = Shapes,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }
