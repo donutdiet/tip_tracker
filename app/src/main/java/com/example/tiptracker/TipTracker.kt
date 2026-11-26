@@ -16,12 +16,18 @@ import com.example.tiptracker.ui.features.editlog.EditLogViewModel
 import com.example.tiptracker.ui.features.settings.SettingsViewModel
 import com.example.tiptracker.ui.features.logdetail.LogDetailViewModel
 import com.example.tiptracker.ui.features.logimagemanager.LogImageManagerViewModel
+import com.example.tiptracker.ui.features.map.MapViewModel
 import com.example.tiptracker.ui.tabs.home.HomeViewModel
 import com.example.tiptracker.ui.tabs.logs.LogsViewModel
 import com.example.tiptracker.ui.tabs.profile.ProfileViewModel
 import com.google.android.libraries.places.api.Places
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -57,9 +63,13 @@ val appModule = module {
     viewModel { (logId: Int) -> EditLogViewModel(logId, get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get()) }
     viewModel { (logId: Int) -> LogImageManagerViewModel(logId, get()) }
+    viewModel { MapViewModel(get(), get(), get()) }
 }
 
 class TipTracker : Application() {
+    // Work that should finish even if no screen is open
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
 
@@ -70,6 +80,16 @@ class TipTracker : Application() {
         startKoin {
             androidContext(this@TipTracker)
             modules(appModule)
+        }
+
+        // Google's terms allow keeping place coordinates 30 days; clear older ones even if the
+        // map isn't opened
+        appScope.launch {
+            try {
+                GlobalContext.get().get<LogRepository>().clearExpiredCoordinates()
+            } catch (e: Exception) {
+                android.util.Log.e("TipTracker", "Couldn't clear expired coordinates", e)
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlaceSearchDelegateTest {
@@ -44,6 +45,7 @@ class PlaceSearchDelegateTest {
     init {
         coEvery { places.search(any(), any(), any()) } returns results
         coEvery { location.getCurrentCoordinates() } returns null
+        coEvery { places.fetchCoordinates(any(), any()) } returns null
     }
 
     // backgroundScope is cancelled when the test ends, which stops the delegate's collector
@@ -53,7 +55,7 @@ class PlaceSearchDelegateTest {
     // advanceUntilIdle() ignores background work, so move virtual time past the debounce
     // (500 ms) and any simulated latency explicitly, then run what is due.
     private fun TestScope.settle() {
-        advanceTimeBy(1_500)
+        advanceTimeBy(1_500.milliseconds)
         runCurrent()
     }
 
@@ -62,9 +64,9 @@ class PlaceSearchDelegateTest {
         val delegate = delegate()
 
         delegate.onQueryChange("pizza")
-        advanceTimeBy(100)
+        advanceTimeBy(100.milliseconds)
         delegate.onQueryChange("pizzas")
-        advanceTimeBy(100)
+        advanceTimeBy(100.milliseconds)
         delegate.onQueryChange("pizzash")
         settle()
 
@@ -233,7 +235,7 @@ class PlaceSearchDelegateTest {
         val stale = PlacePrediction("id-old", "Old Place", "Old St")
         val fresh = PlacePrediction("id-new", "New Place", "New St")
         coEvery { places.search("pizza", any(), any()) } coAnswers {
-            delay(1_000)
+            delay(1_000.milliseconds)
             PlaceSearchResult.Success(listOf(stale))
         }
         coEvery { places.search("pizzas", any(), any()) } returns
@@ -241,7 +243,7 @@ class PlaceSearchDelegateTest {
         val delegate = delegate()
 
         delegate.onQueryChange("pizza")
-        advanceTimeBy(501) // debounce elapsed, first request now in flight
+        advanceTimeBy(501.milliseconds) // debounce elapsed, first request now in flight
         delegate.onQueryChange("pizzas")
         settle()
 
@@ -290,8 +292,8 @@ class PlaceSearchDelegateTest {
 
             assertTrue(delegate.state.value.predictions.isEmpty())
             coVerify(exactly = 1) { places.search(any(), any(), any()) }
-            // TODO: remove this assertion when the coordinates lookup is re-enabled
-            coVerify(exactly = 0) { places.fetchCoordinates(any(), any()) }
+            // The pick's coordinates lookup ends the autocomplete session (making it free)
+            coVerify(exactly = 1) { places.fetchCoordinates("id-pearl", token) }
         }
 
     @Test
@@ -466,7 +468,7 @@ class PlaceSearchDelegateTest {
 
         delegate.onQueryChange("pizza")
         settle()
-        advanceTimeBy(60_000)
+        advanceTimeBy(60_000.milliseconds)
         delegate.onQueryChange("pasta")
         settle()
 

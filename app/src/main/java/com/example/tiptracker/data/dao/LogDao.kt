@@ -7,6 +7,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.LogStats
+import com.example.tiptracker.data.model.PlacedVisit
 import com.example.tiptracker.data.model.RatingCount
 import com.example.tiptracker.data.model.RestaurantVisit
 import kotlinx.coroutines.flow.Flow
@@ -40,11 +41,39 @@ interface LogDao {
     @Query("UPDATE log SET restaurant_name = :name WHERE place_id = :placeId")
     suspend fun renamePlace(placeId: String, name: String): Int
 
+    // Map: every log linked to a place, grouped into places in repository (groupMapPlaces)
+    @Query("""
+        SELECT id, place_id AS placeId, restaurant_name AS name, date, rating, tip_percent AS tipPercent,
+            total, party_size AS partySize, bill_type AS billType, latitude, longitude,
+            coordinates_fetched_at AS coordinatesFetchedAt
+        FROM log WHERE place_id IS NOT NULL
+    """)
+    fun observePlacedVisits(): Flow<List<PlacedVisit>>
+
+    @Query("SELECT * FROM log WHERE place_id = :placeId ORDER BY date DESC, id DESC")
+    fun observeLogsAtPlace(placeId: String): Flow<List<Log>>
+
+    // Gives every log at a place the coordinates, unless it already has newer ones (an edited
+    // log's older lookup never replaces a fresh one)
+    @Query("""
+        UPDATE log SET latitude = :latitude, longitude = :longitude, coordinates_fetched_at = :fetchedAt
+        WHERE place_id = :placeId AND (coordinates_fetched_at IS NULL OR coordinates_fetched_at < :fetchedAt)
+    """)
+    suspend fun setPlaceCoordinates(placeId: String, latitude: Double, longitude: Double, fetchedAt: Long)
+
+    // Google's terms: coordinates may be kept 30 days. Also clears any without a fetch time.
+    @Query("""
+        UPDATE log SET latitude = NULL, longitude = NULL, coordinates_fetched_at = NULL
+        WHERE coordinates_fetched_at < :cutoff OR (coordinates_fetched_at IS NULL AND latitude IS NOT NULL)
+    """)
+    suspend fun clearCoordinatesFetchedBefore(cutoff: Long)
+
     // Saves a log and gives every log at its place the log's name, all or nothing
     @Transaction
     suspend fun insertLogNamingPlace(log: Log): Long {
         val id = insertLog(log)
         renamePlace(checkNotNull(log.placeId), log.restaurantName)
+        shareCoordinates(log)
         return id
     }
 
@@ -52,6 +81,16 @@ interface LogDao {
     suspend fun updateLogNamingPlace(log: Log) {
         updateLog(log)
         renamePlace(checkNotNull(log.placeId), log.restaurantName)
+        shareCoordinates(log)
+    }
+
+    // A log saved with a fresh lookup of its place's coordinates gives them to the place's logs
+    private suspend fun shareCoordinates(log: Log) {
+        val placeId = log.placeId ?: return
+        val latitude = log.latitude ?: return
+        val longitude = log.longitude ?: return
+        val fetchedAt = log.coordinatesFetchedAt ?: return
+        setPlaceCoordinates(placeId, latitude, longitude, fetchedAt)
     }
 
     // Stats profile section. Bill, total and tip are whole-party amounts, so a separate check

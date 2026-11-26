@@ -47,6 +47,7 @@ data class EditLogUiState(
     val selectedPlace: SelectedPlace? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val coordinatesFetchedAt: Long? = null,
     val predictions: List<PlacePrediction> = emptyList(),
     val history: List<RestaurantHistory> = emptyList(),
     val visitedPlaces: Map<String, RestaurantHistory> = emptyMap(),
@@ -232,7 +233,8 @@ class EditLogViewModel(
                 restaurantName = name,
                 selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
-                longitude = null
+                longitude = null,
+                coordinatesFetchedAt = null
             )
         }
         coordinatesJob = viewModelScope.launch {
@@ -240,7 +242,11 @@ class EditLogViewModel(
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
                 if (it.selectedPlace?.placeId == prediction.placeId) {
-                    it.copy(latitude = coordinates?.latitude, longitude = coordinates?.longitude)
+                    it.copy(
+                        latitude = coordinates?.latitude,
+                        longitude = coordinates?.longitude,
+                        coordinatesFetchedAt = coordinates?.let { System.currentTimeMillis() }
+                    )
                 } else it
             }
         }
@@ -257,7 +263,8 @@ class EditLogViewModel(
                 restaurantName = name,
                 selectedPlace = history.placeId?.let { placeId -> SelectedPlace(placeId) },
                 latitude = null,
-                longitude = null
+                longitude = null,
+                coordinatesFetchedAt = null
             )
         }
         placeSearch.onHistoryPicked(fieldText = name)
@@ -287,6 +294,7 @@ class EditLogViewModel(
                     selectedPlace = log.placeId?.let { SelectedPlace(it) },
                     latitude = log.latitude,
                     longitude = log.longitude,
+                    coordinatesFetchedAt = log.coordinatesFetchedAt,
                     review = log.review,
                     date = log.date,
                     rating = log.rating,
@@ -321,7 +329,7 @@ class EditLogViewModel(
 
     private fun clearPlace() {
         coordinatesJob?.cancel()
-        edit { it.copy(selectedPlace = null, latitude = null, longitude = null) }
+        edit { it.copy(selectedPlace = null, latitude = null, longitude = null, coordinatesFetchedAt = null) }
         // Brings suggestions back: the ones picked from if the name is unchanged (free),
         // otherwise a new search
         placeSearch.onPlaceCleared(_uiState.value.restaurantName)
@@ -379,15 +387,13 @@ class EditLogViewModel(
                     // The toggle is hidden for a party of one, so don't keep a stale choice
                     billType = if (partySize > 1) state.billType else BillType.SPLIT,
                     restaurantName = state.restaurantName.collapseWhitespace(),
-                    // Addresses are no longer shown or entered (Google's terms don't allow
-                    // saving a place's), so any old typed one is cleared on save
-                    address = null,
                     review = state.review,
                     rating = state.rating,
                     date = state.date,
                     placeId = state.selectedPlace?.placeId,
                     latitude = state.latitude,
-                    longitude = state.longitude
+                    longitude = state.longitude,
+                    coordinatesFetchedAt = state.coordinatesFetchedAt
                 )
                 if (!namesConfirmed) {
                     val prompt = log.placeId?.let { placeNamePrompt(log.restaurantName) }

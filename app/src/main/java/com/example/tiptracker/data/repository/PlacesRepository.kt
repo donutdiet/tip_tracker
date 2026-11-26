@@ -126,13 +126,18 @@ class PlacesRepository(private val context: Context) {
         }
     }
 
-    /** Coordinates of [placeId], or null on any failure. Ends the autocomplete session. */
-    suspend fun fetchCoordinates(placeId: String, token: AutocompleteSessionToken): Coordinates? {
+    /**
+     * Coordinates of [placeId], or null on any failure. With a [token], ends that autocomplete
+     * session (the session's autocomplete requests are then free); without one it's a
+     * standalone lookup, as when the map locates a saved place. Location only, so it bills at
+     * Place Details Essentials.
+     */
+    suspend fun fetchCoordinates(placeId: String, token: AutocompleteSessionToken? = null): Coordinates? {
         val client = client ?: return null
         val cancellation = CancellationTokenSource()
         return try {
             val request = FetchPlaceRequest.builder(placeId, listOf(Place.Field.LOCATION))
-                .setSessionToken(token)
+                .apply { token?.let(::setSessionToken) }
                 .setCancellationToken(cancellation.token)
                 .build()
             client.fetchPlace(request).await(cancellation).place.location

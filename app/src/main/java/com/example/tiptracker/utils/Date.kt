@@ -1,6 +1,8 @@
 package com.example.tiptracker.utils
 
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 
@@ -34,5 +36,24 @@ fun formatDateForDisplay(dateString: String): String {
         formatter.format(parsedDate)
     } catch (_: Exception) {
         dateString
+    }
+}
+// yyyy-MM-dd to how long ago it was: "Today", "Yesterday", "3 days ago", "2 weeks ago", ...
+fun formatDateRelative(dateString: String, today: LocalDate = LocalDate.now()): String {
+    val date = try {
+        LocalDate.parse(dateString)
+    } catch (_: Exception) {
+        return dateString
+    }
+    val days = ChronoUnit.DAYS.between(date, today)
+    fun ago(count: Long, unit: String) = if (count == 1L) "1 $unit ago" else "$count ${unit}s ago"
+    return when {
+        days < 0 -> formatDateForDisplay(dateString)
+        days == 0L -> "Today"
+        days == 1L -> "Yesterday"
+        days < 7 -> ago(days, "day")
+        days < 30 -> ago(days / 7, "week")
+        days < 365 -> ago(ChronoUnit.MONTHS.between(date, today).coerceAtLeast(1), "month")
+        else -> ago(ChronoUnit.YEARS.between(date, today), "year")
     }
 }

@@ -1,8 +1,11 @@
 package com.example.tiptracker.ui.tabs.logs
 
+import com.example.tiptracker.ui.theme.card
+import com.example.tiptracker.ui.theme.floating
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,14 +14,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,7 +35,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.tiptracker.R
 import com.example.tiptracker.data.entity.Log
-import com.example.tiptracker.ui.theme.ScreenPadding
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.formatCurrency
@@ -39,7 +44,8 @@ import com.example.tiptracker.utils.formatTipPercent
 @Composable
 fun LogsListPage(
     uiState: LogsUiState,
-    onLogClick: (Int) -> Unit
+    onLogClick: (Int) -> Unit,
+    onOpenMap: () -> Unit
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -69,7 +75,13 @@ fun LogsListPage(
             else -> {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = ScreenPadding,
+                    // Room below the last log so it can scroll clear of the Map button
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 4.dp,
+                        bottom = MAP_BUTTON_CLEARANCE
+                    ),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(uiState.logs, key = { it.id }) { log ->
@@ -79,10 +91,45 @@ fun LogsListPage(
                         )
                     }
                 }
+                MapButton(
+                    onClick = onOpenMap,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
+                )
             }
         }
     }
 }
+
+/** A floating pill that opens the map of the user's places, styled like Google Maps' buttons. */
+@Composable
+private fun MapButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.floating,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shadowElevation = 6.dp,
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.map),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Map", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+// The Map button's height plus its margin, with a little extra
+private val MAP_BUTTON_CLEARANCE = 80.dp
 
 @Composable
 private fun LogItem(
@@ -92,7 +139,7 @@ private fun LogItem(
     Card(
         onClick = onLogItemClick,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.card,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -198,7 +245,6 @@ fun LogsListPagePreview() {
                         total = 152.02,
                         partySize = 2,
                         restaurantName = "The Pearl sd flsdkfj sdlkfj sldfkj sdlfksdj flksdj fdsl",
-                        address = null,
                         review = "goysters",
                         rating = 8.6,
                         date = "2023-07-09"
@@ -210,14 +256,14 @@ fun LogsListPagePreview() {
                         total = 54.60,
                         partySize = 1,
                         restaurantName = "Taco Bell",
-                        address = null,
                         review = "Fast",
                         rating = 5.0,
                         date = "2023-07-10"
                     )
                 )
             ),
-            onLogClick = {}
+            onLogClick = {},
+            onOpenMap = {}
         )
     }
 }

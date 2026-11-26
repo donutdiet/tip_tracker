@@ -68,6 +68,7 @@ fun RootActivity() {
         tabEntries(
             openLogDetail = { navigator.openFullscreen(RootKey.LogDetail(it)) },
             openLogSaved = { navigator.onLogSaved(it) },
+            openMap = { navigator.openFullscreen(RootKey.Map) },
             snackbarHostState =  navigationState.snackBarHostState
         )
     }
@@ -97,7 +98,8 @@ fun RootActivity() {
                 }
             },
             openEditPage = { navigator.openFullscreen(RootKey.EditLog(it)) },
-            openImageManager = { navigator.openFullscreen(RootKey.LogImageManager(it)) }
+            openImageManager = { navigator.openFullscreen(RootKey.LogImageManager(it)) },
+            openLogDetail = { navigator.openFullscreen(RootKey.LogDetail(it)) }
         )
     }
 

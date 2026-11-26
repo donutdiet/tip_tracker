@@ -154,15 +154,10 @@ class PlaceSearchDelegate(
     ): Coordinates? {
         onPicked(fieldText)
 
-        // TODO: re-enable when the map ships. Disabled so no Place Details request is made;
-        //  logs are saved with place_id only and lat/lng stay null until then.
-        //  Note this also means the autocomplete session is never ended by a details call.
-        // val finishedSession = sessionToken
-        // sessionToken = places.newSessionToken()
-        // return places.fetchCoordinates(prediction.placeId, finishedSession)
-
+        // Ending the session with this lookup makes its autocomplete requests free
+        val finishedSession = sessionToken
         sessionToken = places.newSessionToken()
-        return null
+        return places.fetchCoordinates(prediction.placeId, finishedSession)
     }
 
     /**

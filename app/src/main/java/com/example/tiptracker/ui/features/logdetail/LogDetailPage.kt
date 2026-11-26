@@ -1,5 +1,6 @@
 package com.example.tiptracker.ui.features.logdetail
 
+import com.example.tiptracker.ui.theme.card
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
@@ -77,6 +78,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.SubcomposeAsyncImage
 import com.example.tiptracker.R
+import com.example.tiptracker.ui.components.PlaceAddress
 import com.example.tiptracker.data.model.BillType
 import com.example.tiptracker.ui.theme.TipTrackerTheme
 import com.example.tiptracker.ui.theme.titleMediumMono
@@ -87,11 +89,6 @@ import com.example.tiptracker.utils.formatTipPercent
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.fromHtml
-import androidx.compose.ui.semantics.Role
-import com.example.tiptracker.ui.components.GoogleMapsAttribution
-import com.example.tiptracker.data.repository.PlaceDetails
 
 @Composable
 fun LogDetailPage(
@@ -189,7 +186,7 @@ private fun LogStatsCard(
     Card(
         shape = RoundedCornerShape(4.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.card)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -286,79 +283,6 @@ private fun LogStatsCard(
                 )
             }
         }
-    }
-}
-
-/**
- * A linked place's address. Looking it up is billed, so it's fetched only once the user taps
- * "Show address", then shown with the attributions Google requires.
- */
-@Composable
-private fun PlaceAddress(
-    details: PlaceDetails?,
-    isLoading: Boolean,
-    onShow: () -> Unit
-) {
-    val address = details?.address
-    if (address == null) {
-        val color = if (isLoading) {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        } else {
-            MaterialTheme.colorScheme.primary
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.small)
-                .clickable(enabled = !isLoading, role = Role.Button, onClick = onShow)
-                .padding(vertical = 4.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.location),
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = if (isLoading) "Loading address…" else "Show address",
-                style = MaterialTheme.typography.bodyMedium,
-                color = color
-            )
-        }
-        return
-    }
-
-    val iconSize = 16.dp
-    val iconGap = 4.dp
-    // Lines under the address start where the address text does, not under the icon
-    val textIndent = Modifier.padding(start = iconSize + iconGap)
-
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                painter = painterResource(R.drawable.location),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(iconSize)
-            )
-            Spacer(modifier = Modifier.width(iconGap))
-            Text(
-                text = address,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        details.attributions.forEach {
-            Text(
-                // May contain HTML links
-                text = AnnotatedString.fromHtml(it),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = textIndent
-            )
-        }
-        GoogleMapsAttribution(modifier = textIndent)
     }
 }
 

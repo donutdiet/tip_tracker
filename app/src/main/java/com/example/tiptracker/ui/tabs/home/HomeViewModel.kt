@@ -67,9 +67,11 @@ data class HomeUiState(
     val tipPreset1Percent: Int = 10,
     val tipPreset2Percent: Int = 15,
 
-    // Not used rn
+    // The linked place's coordinates, looked up when it was picked, and when (Google's terms
+    // limit how long they're kept)
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val coordinatesFetchedAt: Long? = null,
 ) {
     // Text displayed in the custom tip text field
     val displayedTipPercent: String
@@ -320,7 +322,8 @@ class HomeViewModel(
                 restaurantName = name,
                 selectedPlace = SelectedPlace.from(prediction),
                 latitude = null,
-                longitude = null
+                longitude = null,
+                coordinatesFetchedAt = null
             )
         }
         coordinatesJob = viewModelScope.launch {
@@ -328,7 +331,11 @@ class HomeViewModel(
             _uiState.update {
                 // Ignore if the selection changed while we were waiting
                 if (it.selectedPlace?.placeId == prediction.placeId) {
-                    it.copy(latitude = coordinates?.latitude, longitude = coordinates?.longitude)
+                    it.copy(
+                        latitude = coordinates?.latitude,
+                        longitude = coordinates?.longitude,
+                        coordinatesFetchedAt = coordinates?.let { System.currentTimeMillis() }
+                    )
                 } else it
             }
         }
@@ -345,7 +352,8 @@ class HomeViewModel(
                 restaurantName = name,
                 selectedPlace = history.placeId?.let { placeId -> SelectedPlace(placeId) },
                 latitude = null,
-                longitude = null
+                longitude = null,
+                coordinatesFetchedAt = null
             )
         }
         placeSearch.onHistoryPicked(fieldText = name)
@@ -372,7 +380,7 @@ class HomeViewModel(
 
     private fun clearPlace() {
         coordinatesJob?.cancel()
-        _uiState.update { it.copy(selectedPlace = null, latitude = null, longitude = null) }
+        _uiState.update { it.copy(selectedPlace = null, latitude = null, longitude = null, coordinatesFetchedAt = null) }
         // Brings suggestions back: the ones picked from if the name is unchanged (free),
         // otherwise a new search
         placeSearch.onPlaceCleared(_uiState.value.restaurantName)
@@ -411,13 +419,13 @@ class HomeViewModel(
                     // Whatever is in the name field (filled from a picked place, possibly edited);
                     // the place's address is never saved
                     restaurantName = state.restaurantName.collapseWhitespace(),
-                    address = null,
                     review = state.review,
                     rating = state.rating,
                     date = state.date,
                     placeId = state.selectedPlace?.placeId,
                     latitude = state.latitude,
-                    longitude = state.longitude
+                    longitude = state.longitude,
+                    coordinatesFetchedAt = state.coordinatesFetchedAt
                 )
                 if (!namesConfirmed) {
                     val prompt = log.placeId?.let { placeNamePrompt(log.restaurantName) }

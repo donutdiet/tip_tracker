@@ -18,8 +18,8 @@ val localProperties = Properties().apply {
 val placesApiKeyDebug = localProperties.getProperty("PLACES_API_KEY_DEBUG") ?: ""
 val placesApiKeyRelease = localProperties.getProperty("PLACES_API_KEY_RELEASE") ?: ""
 
-// Without a key the Places SDK is never initialized and restaurant search silently disappears,
-// so refuse to build a release that would ship that way. Debug builds still work without one.
+val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
+
 val checkPlacesApiKey = tasks.register("checkPlacesApiKey") {
     description = "Fails release builds when PLACES_API_KEY_RELEASE is missing from local.properties."
     val key = placesApiKeyRelease
@@ -51,6 +51,7 @@ android {
         versionName = "1.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["mapsApiKey"] = mapsApiKey
     }
 
     buildFeatures {
@@ -140,5 +141,7 @@ dependencies {
 
     // Google Places SDK
     implementation(libs.google.places)
+    implementation(libs.maps.compose)
+    implementation(libs.maps.compose.utils)
     implementation(libs.play.services.location)
 }
