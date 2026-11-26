@@ -56,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -88,6 +89,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -298,7 +300,7 @@ fun MapRoot(
                     .align(Alignment.TopCenter)
                     .statusBarsPadding()
                     // Centered, but clear of the back button on either side
-                    .padding(top = 16.dp, start = STATUS_SIDE_INSET, end = STATUS_SIDE_INSET)
+                    .padding(top = 12.dp, start = STATUS_SIDE_INSET, end = STATUS_SIDE_INSET)
             )
         }
     }
@@ -550,7 +552,7 @@ private fun RatingMarker(rating: Double, logCount: Int, selected: Boolean) {
                 .background(ratingColor, CircleShape)
         ) {
             Text(
-                text = String.format(Locale.getDefault(), "%.1f", rating),
+                text = String.format(currentLocale(), "%.1f", rating),
                 color = ratingText,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
@@ -639,19 +641,22 @@ private fun MapStatus(uiState: MapUiState, modifier: Modifier = Modifier) {
         uiState.unlocatedCount > 0 -> "${places(uiState.unlocatedCount)} can't be shown right now"
         else -> null
     } ?: return
+    // Styled like the back button beside it: same surface, shadow and height
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.inverseSurface,
-        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        shape = RoundedCornerShape(BACK_BUTTON_SIZE / 2),
+        color = MaterialTheme.colorScheme.floating,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shadowElevation = 4.dp,
         modifier = modifier
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .heightIn(min = BACK_BUTTON_SIZE)
+                .padding(horizontal = 18.dp, vertical = 10.dp)
+        ) {
+            Text(text = text, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -765,7 +770,7 @@ private fun PlaceSummary(place: MapPlace, modifier: Modifier = Modifier) {
                     )
                     PlaceStat(
                         icon = R.drawable.person,
-                        text = formatAverage(place.averagePartySize),
+                        text = formatAverage(place.averagePartySize, currentLocale()),
                         description = "Average party size"
                     )
                     PlaceStat(
@@ -815,7 +820,7 @@ private fun VisitRow(log: Log, onClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = String.format(Locale.getDefault(), "%.1f", log.rating),
+                        text = String.format(currentLocale(), "%.1f", log.rating),
                         style = MaterialTheme.typography.titleMediumMono
                     )
                 }
@@ -864,8 +869,13 @@ private fun PlaceStat(@DrawableRes icon: Int, text: String, description: String)
 }
 
 // 2.5, or 2 rather than 2.0
-private fun formatAverage(value: Double): String =
-    if (value % 1.0 == 0.0) value.toInt().toString() else String.format(Locale.getDefault(), "%.1f", value)
+private fun formatAverage(value: Double, locale: Locale): String =
+    if (value % 1.0 == 0.0) value.toInt().toString() else String.format(locale, "%.1f", value)
+
+// The app's locale, read so that composables update when it changes
+@Composable
+@ReadOnlyComposable
+private fun currentLocale(): Locale = LocalConfiguration.current.locales[0]
 
 @Composable
 private fun VisitStat(@DrawableRes icon: Int, text: String) {

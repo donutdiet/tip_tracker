@@ -154,7 +154,7 @@ class PlaceSearchDelegate(
     ): Coordinates? {
         onPicked(fieldText)
 
-        // Ending the session with this lookup makes its autocomplete requests free
+        // Ends the session: its autocomplete requests past the 12th are then free
         val finishedSession = sessionToken
         sessionToken = places.newSessionToken()
         return places.fetchCoordinates(prediction.placeId, finishedSession)

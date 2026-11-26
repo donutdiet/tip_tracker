@@ -292,7 +292,7 @@ class PlaceSearchDelegateTest {
 
             assertTrue(delegate.state.value.predictions.isEmpty())
             coVerify(exactly = 1) { places.search(any(), any(), any()) }
-            // The pick's coordinates lookup ends the autocomplete session (making it free)
+            // The pick's coordinates lookup ends the autocomplete session
             coVerify(exactly = 1) { places.fetchCoordinates("id-pearl", token) }
         }
 

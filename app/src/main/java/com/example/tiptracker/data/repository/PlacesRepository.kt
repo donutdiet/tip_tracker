@@ -128,9 +128,10 @@ class PlacesRepository(private val context: Context) {
 
     /**
      * Coordinates of [placeId], or null on any failure. With a [token], ends that autocomplete
-     * session (the session's autocomplete requests are then free); without one it's a
-     * standalone lookup, as when the map locates a saved place. Location only, so it bills at
-     * Place Details Essentials.
+     * session; without one it's a standalone lookup, as when the map locates a saved place.
+     * Location only, so it bills at Place Details Essentials. A session ended by an Essentials
+     * lookup still bills its first 12 autocomplete requests (only later ones are free), but an
+     * unended session bills all of them.
      */
     suspend fun fetchCoordinates(placeId: String, token: AutocompleteSessionToken? = null): Coordinates? {
         val client = client ?: return null
