@@ -2,6 +2,7 @@ package com.example.tiptracker.utils
 
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
@@ -38,6 +39,13 @@ fun formatDateForDisplay(dateString: String): String {
         dateString
     }
 }
+// yyyy-MM-dd to MM/dd/yy: always 8 characters, so dates line up in a list
+fun formatDateNumeric(dateString: String): String = try {
+    LocalDate.parse(dateString).format(DateTimeFormatter.ofPattern("MM/dd/yy"))
+} catch (_: Exception) {
+    dateString
+}
+
 // yyyy-MM-dd to how long ago it was: "Today", "Yesterday", "3 days ago", "2 weeks ago", ...
 fun formatDateRelative(dateString: String, today: LocalDate = LocalDate.now()): String {
     val date = try {

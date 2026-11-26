@@ -101,7 +101,7 @@ import com.example.tiptracker.data.entity.Log
 import com.example.tiptracker.data.model.MapPlace
 import com.example.tiptracker.ui.theme.titleMediumMono
 import com.example.tiptracker.utils.formatCurrency
-import com.example.tiptracker.utils.formatDateForDisplay
+import com.example.tiptracker.utils.formatDateNumeric
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.model.CameraPosition
@@ -109,6 +109,7 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.clustering.ClusterItem
+import com.google.maps.android.clustering.view.ClusterRenderer
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import com.google.maps.android.compose.CameraMoveStartedReason
 import com.google.maps.android.compose.ComposeMapColorScheme
@@ -117,10 +118,12 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.MapsComposeExperimentalApi
 import com.google.maps.android.compose.clustering.Clustering
+import com.google.maps.android.compose.clustering.ClusteringMarkerProperties
 import com.google.maps.android.compose.rememberCameraPositionState
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -128,14 +131,15 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.log2
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 private class PlaceMarker(val place: MapPlace, val selected: Boolean) : ClusterItem {
     override val position = LatLng(place.coordinates!!.latitude, place.coordinates.longitude)
     override val title: String = place.name
     override val snippet: String? = null
-    // The selected place draws over places it overlaps
-    override val zIndex: Float? = if (selected) 1f else null
+    // Set in the marker's content instead; the Compose renderer ignores this
+    override val zIndex: Float? = null
 }
 
 /**
@@ -367,6 +371,20 @@ private fun PlacesMap(
     var centeredOn by rememberSaveable { mutableStateOf<LatLng?>(null) }
     DisposableEffect(snapshotter) { onDispose { snapshotter.map = null } }
     val scope = rememberCoroutineScope()
+
+    // The library animates replaced markers into the nearest cluster, so selecting a place sent
+    // nearby ones flying into clusters. Animations are only on while zooming.
+    var clusterRenderer by remember { mutableStateOf<ClusterRenderer<PlaceMarker>?>(null) }
+    DisposableEffect(markers) {
+        clusterRenderer?.setAnimation(false)
+        onDispose { }
+    }
+    LaunchedEffect(clusterRenderer) {
+        val renderer = clusterRenderer ?: return@LaunchedEffect
+        snapshotFlow { cameraPositionState.position.zoom }
+            .drop(1)
+            .collect { renderer.setAnimation(true) }
+    }
     val context = LocalContext.current
     // Follows the app's theme (its own dark mode setting, not only the system's)
     val darkMap = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -481,18 +499,24 @@ private fun PlacesMap(
                 true // No default info window; the sheet shows the place
             },
             clusterItemContent = { marker ->
+                // The selected place draws over everything it overlaps
+                ClusteringMarkerProperties(zIndex = if (marker.selected) SELECTED_Z_INDEX else null)
                 RatingMarker(marker.place.averageRating, marker.place.visitCount, marker.selected)
             },
             clusterContent = { cluster -> ClusterBubble(cluster.size) },
+            // A place's image is bigger than its circle (room for the badge and halo), so where
+            // it overlaps a cluster, the cluster sits on top and takes the tap
+            clusterContentZIndex = CLUSTER_Z_INDEX,
             // Centered on the place, since they're badges rather than pins
             clusterItemContentAnchor = Offset(0.5f, 0.5f),
             clusterContentAnchor = Offset(0.5f, 0.5f),
             onClusterManager = { manager ->
-                // Group only places whose badges would collide, even just two of them (the
-                // library's defaults suit small pins: 100dp apart, and 4 or more). splitZoom
-                // relies on this distance, so it's set rather than left to the default.
+                // Group places close enough for their taps to collide, even just two of them
+                // (the library's defaults: 100dp apart, and 4 or more). splitZoom relies on
+                // this distance, so it's set rather than left to the default.
                 manager.algorithm.maxDistanceBetweenClusteredItems = CLUSTER_DISTANCE_DP
                 (manager.renderer as? DefaultClusterRenderer<*>)?.minClusterSize = MIN_CLUSTER_SIZE
+                clusterRenderer = manager.renderer
             }
         )
     }
@@ -724,7 +748,7 @@ private fun PlaceSheet(
                     isLoading = isLoadingAddress,
                     failed = addressFailed,
                     onShow = onShowAddress,
-                    modifier = Modifier.padding(start = ROW_INSET, end = ROW_INSET, bottom = 4.dp)
+                    modifier = Modifier.padding(horizontal = ROW_INSET)
                 )
             }
             items(visits, key = { it.id }) { log ->
@@ -756,7 +780,7 @@ private fun PlaceSummary(place: MapPlace, modifier: Modifier = Modifier) {
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     PlaceStat(
                         icon = R.drawable.money,
@@ -773,11 +797,6 @@ private fun PlaceSummary(place: MapPlace, modifier: Modifier = Modifier) {
                         text = formatAverage(place.averagePartySize, currentLocale()),
                         description = "Average party size"
                     )
-                    PlaceStat(
-                        icon = R.drawable.receipt_long,
-                        text = "${place.visitCount}",
-                        description = "Visits"
-                    )
                 }
             }
         }
@@ -785,8 +804,8 @@ private fun PlaceSummary(place: MapPlace, modifier: Modifier = Modifier) {
 }
 
 /**
- * One visit, a card like a log in the Logs tab: the place is already known, so its total leads, with
- * the rating where the total was.
+ * One visit, a card like a log in the Logs tab, on one line since the place is already known:
+ * when, its tip, party size and rating, then the total.
  */
 @Composable
 private fun VisitRow(log: Log, onClick: () -> Unit) {
@@ -802,50 +821,28 @@ private fun VisitRow(log: Log, onClick: () -> Unit) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = ROW_INSET, top = 8.dp, bottom = 8.dp, end = 4.dp)
+            modifier = Modifier.padding(horizontal = ROW_INSET, vertical = 12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "$${formatCurrency(log.total)}",
-                        style = MaterialTheme.typography.titleMediumMono,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        painter = painterResource(R.drawable.star),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = String.format(currentLocale(), "%.1f", log.rating),
-                        style = MaterialTheme.typography.titleMediumMono
-                    )
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        VisitStat(R.drawable.person, "${log.partySize}")
-                        VisitStat(R.drawable.hand_meal, "${formatTipPercent(log.tipPercent)}%")
-                    }
-                    Text(
-                        text = formatDateForDisplay(log.date),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
+            Text(
+                text = formatDateNumeric(log.date),
+                // Equal-width digits, so every date is the same width and the stats line up
+                style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            // Weighted, so it's measured last: the total always gets its full width
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                VisitStat(R.drawable.hand_meal, "${log.tipPercent.roundToInt()}%")
+                VisitStat(R.drawable.person, "${log.partySize}")
+                VisitStat(R.drawable.star, String.format(currentLocale(), "%.1f", log.rating))
             }
-            Icon(
-                painter = painterResource(R.drawable.chevron_right),
-                contentDescription = null,
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .size(20.dp)
+            Text(
+                text = "$${formatCurrency(log.total)}",
+                style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -954,10 +951,14 @@ private fun splitZoom(clusterPosition: LatLng, positions: List<LatLng>, currentZ
 
 private const val SINGLE_PLACE_ZOOM = 15f
 private const val MAX_ZOOM = 21f
-// How close places must be on screen to group: a bit more than a marker's width, so places
-// group only when their markers would overlap
-private const val CLUSTER_DISTANCE_DP = 48
+// How close places must be on screen to group. Places left apart are more than half this apart
+// (44dp), so a place's image, which takes taps 8dp past its circle for the badge and halo, never
+// reaches a neighbour's circle
+private const val CLUSTER_DISTANCE_DP = 88
 private const val MIN_CLUSTER_SIZE = 2
+// Places are at 0
+private const val CLUSTER_Z_INDEX = 1f
+private const val SELECTED_Z_INDEX = 2f
 private val EDGE_PADDING = 64.dp
 // Roughly the land color of each map style, shown until the map is created
 private const val MAP_COVER_FADE_MS = 200

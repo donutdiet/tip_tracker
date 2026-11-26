@@ -47,7 +47,7 @@ android {
         applicationId = "com.jerrywang.tiptracker"
         minSdk = 28
         targetSdk = 36
-        versionCode = 19
+        versionCode = 21
         versionName = "1.3.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
